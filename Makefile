@@ -1,3 +1,16 @@
+# Configuración inicial
+SHELL := /bin/bash
+
+MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
+
+.DEFAULT_GOAL := help
+.SHELLFLAGS := -eu -o pipefail -c
+.DELETE_ON_ERROR:
+
+export LC_ALL := C
+export LANG := C
+export TZ := UTC
+
 .PHONY: build clean format help lint pack run test tools
 
 # Directorios
