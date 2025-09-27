@@ -1,5 +1,7 @@
 # Configuración inicial
 SHELL := /bin/bash
+SHELLCHECK := shellcheck
+SHFMT := shfmt
 
 MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 
@@ -30,14 +32,22 @@ tools: ## Verificar disponibilidad de dependencias
 	@command -v bash > /dev/null 2>&1 || { echo "Comando no encontrado: bash"; exit 1; }
 	@command -v bats > /dev/null 2>&1 || { echo "Comando no encontrado: bats"; exit 1; }
 	@command -v curl > /dev/null 2>&1 || { echo "Comando no encontrado: curl"; exit 1; }
+	@command -v find > /dev/null 2>&1 || { echo "Comando no encontrado: find"; exit 1; }
 	@command -v nc > /dev/null 2>&1 || { echo "Comando no encontrado: nc"; exit 1; }
 	@command -v ss > /dev/null 2>&1 || { echo "Comando no encontrado: ss"; exit 1; }
 
 lint: ## Revisar formato de Bash scripts
-	
+	@find $(SRC_DIR) -name "*.sh" -type f | while read -r file; do \
+		echo "Revisando $$file"; \
+		$(SHELLCHECK) "$$file" || exit 1; \
+		$(SHFMT) -d "$$file" || exit 1; \
+	done
 
 format: ## Formatear Bash scripts
-	
+	@find $(SRC_DIR) -name "*.sh" -type f | while read -r file; do \
+		echo "Formateando $$file"; \
+		$(SHFMT) -w "$$file" || exit 1; \
+	done
 
 build: tools ## Prepara artefactos intermedios en out/
 	
