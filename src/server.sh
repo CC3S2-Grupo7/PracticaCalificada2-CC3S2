@@ -125,7 +125,7 @@ start_server() {
     while true; do
         echo "Esperando conexión" >&2
         
-        nc -l -s "$HOST" -p "$PORT" < "$FIFO" | (
+        nc -l $HOST $PORT < "$FIFO" | (
             process_request > "$FIFO"
         )
     done
