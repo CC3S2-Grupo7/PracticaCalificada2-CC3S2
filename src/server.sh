@@ -7,6 +7,25 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
 SERVER_START=$(date +%s)
 
+# Variables para limpieza
+FIFO=""
+SERVER_PID=""
+
+# Limpieza
+cleanup() {
+    echo "Apagando el servidor" >&2
+
+    if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
+        kill "$SERVER_PID" 2>/dev/null || true
+        wait "$SERVER_PID" 2>/dev/null || true
+    fi
+
+    if [[ -n "$FIFO" && -p "$FIFO" ]]; then
+        rm -f "$FIFO"
+    fi
+}
+trap cleanup SIGINT SIGTERM
+
 # Generar respuesta HTTP
 generate_response() {
     local status_code="$1"
@@ -99,16 +118,15 @@ start_server() {
     fi
 
     # Crear FIFO
-    local fifo=$(mktemp -u)
-    mkfifo "$fifo"
-    trap "rm -f '$fifo'" EXIT
+    FIFO=$(mktemp -u)
+    mkfifo "$FIFO"
 
     # Servidor principal
     while true; do
         echo "Esperando conexión" >&2
         
-        nc -l -s "$HOST" -p "$PORT" < "$fifo" | (
-            process_request > "$fifo"
+        nc -l -s "$HOST" -p "$PORT" < "$FIFO" | (
+            process_request > "$FIFO"
         )
     done
 }
