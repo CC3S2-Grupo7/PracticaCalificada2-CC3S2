@@ -39,7 +39,7 @@ validate_directory() {
     local value="${!var_name:-}"
 
     if [[ -z "$value" ]]; then
-        ERRORS+=("$var_name debe ser ruta relativa no vacía, actual: 'no definido'")
+        ERRORS+=("$var_name debe ser ruta no vacía, actual: 'no definido'")
         return 1
     fi
 
@@ -67,12 +67,21 @@ validate_env() {
     validate_directory OUT_DIR || status=1
     validate_directory DIST_DIR || status=1
 
+    # Reportar errores
     if ((${#ERRORS[@]} > 0)); then
-        log_error "Configuración inválida:"
+        log_error "Errores encontrados:"
         for err in "${ERRORS[@]}"; do
             log_error "  - $err"
         done
         return 1
+    fi
+
+    # Reportar advertencias
+    if ((${#WARNINGS[@]} > 0)); then
+        log_warn "Advertencias encontradas:"
+        for warn in "${WARNINGS[@]}"; do
+            log_warn "  - $warn"
+        done
     fi
 
     return $status
