@@ -5,9 +5,9 @@ set -euo pipefail
 # Variables de entorno por defecto
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
-SERVER_START=$(date +%s)
 
-# Variables para limpieza
+# Variables para limpieza y logging
+SERVER_START=$(date +%s)
 FIFO=""
 SERVER_PID=""
 
@@ -53,7 +53,7 @@ health_endpoint() {
 {
     "status": "OK",
     "timestamp": "$timestamp",
-    "uptime_seconds": $(($(date +%s) - SERVER_START)) 
+    "uptime_seconds": $(($(date +%s) - SERVER_START)),
 }
 EOF
     )
@@ -70,9 +70,9 @@ not_found_endpoint() {
     local json_response
     json_response=$(cat << EOF
 {
-    "error": "Not Found"
-    "message": "Endpoint $path no encontrado"
-    "timestamp": "$timestamp"
+    "error": "Not Found",
+    "message": "Endpoint $path no encontrado",
+    "timestamp": "$timestamp",
 }
 EOF
     )
@@ -125,7 +125,7 @@ start_server() {
     while true; do
         echo "Esperando conexión" >&2
         
-        nc -l $HOST $PORT < "$FIFO" | (
+        nc -l "$HOST" "$PORT" < "$FIFO" | (
             process_request > "$FIFO"
         )
     done
