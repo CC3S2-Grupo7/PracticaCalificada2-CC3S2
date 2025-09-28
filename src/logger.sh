@@ -4,6 +4,9 @@
 # Niveles: 0=ERROR, 1=WARN, 2=INFO, 3=DEBUG
 LOG_LEVEL=${LOG_LEVEL:-2}  # Por defecto INFO
 
+# Archivo de destino para logs
+LOG_FILE=${LOG_FILE:-""} # Por defecto no se usa archivo
+
 # Colores
 RED="\033[0;31m"
 YELLOW="\033[0;33m"
@@ -25,6 +28,11 @@ _log() {
 
     if [[ $LOG_LEVEL -ge $level_num ]]; then
         echo -e "$ts ${color}[${level_name}]${RESET} $msg" >&2
+
+        # Si hay un archivo definido, escribir ahí los logs sin colores
+        if [[ -n "$LOG_FILE" ]]; then
+            echo "$ts [$level_name] $msg" >> "$LOG_FILE"
+        fi
     fi
 }
 
