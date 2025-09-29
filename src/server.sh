@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Importar dependencias
+BASE_DIR="$(dirname "$0")"
+source "$BASE_DIR/check-env.sh"
+source "$BASE_DIR/logger.sh"
+
 # Variables de entorno por defecto
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
@@ -8,22 +13,26 @@ PORT="${PORT:-8080}"
 # Variables para limpieza y logging
 SERVER_START=$(date +%s)
 FIFO=""
-SERVER_PID=""
 
 # Limpieza
 cleanup() {
-    echo "Apagando el servidor" >&2
+    log_info "Apagando servidor..."
 
-    if [[ -n "$SERVER_PID" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
-        kill "$SERVER_PID" 2>/dev/null || true
-        wait "$SERVER_PID" 2>/dev/null || true
-    fi
+    # Matar procesos hijos
+    pkill -TERM -P $$ 2>/dev/null || true # Mandar TERM a hijos
+    sleep 0.5
+    pkill -KILL -P $$ 2>/dev/null || true  # Forzar si no responden
 
+    # Eliminar FIFO
     if [[ -n "$FIFO" && -p "$FIFO" ]]; then
         rm -f "$FIFO"
     fi
+
+    sleep 0.2
+
+    log_success "Servidor detenido correctamente"
 }
-trap cleanup SIGINT SIGTERM
+trap cleanup SIGINT SIGTERM EXIT
 
 # Generar respuesta HTTP
 generate_response() {
