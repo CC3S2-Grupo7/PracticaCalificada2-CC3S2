@@ -16,20 +16,40 @@ TEST_DIST_DIR="$BASE_TEST_DIR/test-dist"
 SERVER_PID=""
 
 setup() {
+    log_debug "=== SETUP: $BATS_TEST_DESCRIPTION ==="
+
+    # Crear directorios
     mkdir -p "$TEST_OUT_DIR" "$TEST_DIST_DIR"
+    log_debug "Directorios creados: $TEST_OUT_DIR, $TEST_DIST_DIR"
+    log_debug "=== SETUP COMPLETADO ==="
 }
 
 teardown() {
-    # Detener servidor si está corriendo
-    if [[ -n "${SERVER_PID:-}" ]]; then
-        kill -9 "$SERVER_PID" 2>/dev/null || true
-    fi
+    log_debug "=== TEARDOWN: $BATS_TEST_DESCRIPTION ==="
 
-    # Limpiar procesos
-    pkill -9 -f "server.sh" 2>/dev/null || true
+    # Cleanup
+    cleanup_all
 
-    # Limpiar carpetas de test
+    # Limpiar directorios
     rm -rf "$TEST_OUT_DIR" "$TEST_DIST_DIR" 2>/dev/null || true
+
+    log_debug "=== TEARDOWN COMPLETADO ==="
+    echo "" >> "$LOG_FILE" 2>/dev/null || true
+}
+
+cleanup_all() {
+    # Intentar terminar el servidor si está corriendo
+    if [[ -n "${SERVER_PID:-}" ]]; then
+        kill -TERM "$SERVER_PID" 2>/dev/null || true
+        sleep 0.5
+    fi
+    # Matar cualquier proceso huérfano
+    pkill -9 -f "server.sh" 2>/dev/null || true
+    pkill -9 -f "nc -l.*80[0-9][0-9]" 2>/dev/null || true
+    SERVER_PID=""
+    sleep 0.5
+}
+
 # Limpiar un puerto en específico
 cleanup_port() {
     local port="$1"
