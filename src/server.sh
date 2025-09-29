@@ -117,11 +117,17 @@ process_request() {
 }
 
 start_server() {
-    echo "Iniciando servidor en $HOST:$PORT" >&2
+    # Validar entorno antes de iniciar
+    if ! validate_env; then
+        log_error "Servidor no iniciado: configuracion invalida"
+        exit 1
+    fi
 
-    # Verificar que el puerto no esté en uso
+    log_success "Iniciando servidor en $HOST:$PORT"
+
+    # Verificar que el puerto no este en uso
     if nc -z "$HOST" "$PORT" 2>/dev/null; then
-        echo "Error: Puerto $PORT se encuentra en uso en $HOST" >&2
+        log_error "Puerto $PORT ya esta en uso en $HOST"
         exit 2
     fi
 
@@ -131,11 +137,17 @@ start_server() {
 
     # Servidor principal
     while true; do
-        echo "Esperando conexión" >&2
-        
+        log_info "Esperando conexion en $HOST:$PORT"
+
         nc -l "$HOST" "$PORT" < "$FIFO" | (
             process_request > "$FIFO"
-        )
+        ) &
+        
+        # Esperar que termine la conexión
+        wait $! 2>/dev/null || true
+        
+        # Pausa entre conexiones
+        sleep 0.1
     done
 }
 
