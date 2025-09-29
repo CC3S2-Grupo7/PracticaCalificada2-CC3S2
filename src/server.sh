@@ -99,8 +99,9 @@ process_request() {
 		[[ -z "$header" || "$header" == $'\r' ]] && break
 	done
 
-	local method path
-	read -r method path <<<"$request_line"
+	local method path protocol
+    # shellcheck disable=SC2034
+	read -r method path protocol <<<"$request_line"
 
 	echo "Procesando request: $method $path" >&2
 
