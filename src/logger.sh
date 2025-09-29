@@ -2,7 +2,7 @@
 # Funciones de logging con colores ANSI
 
 # Niveles: 0=ERROR, 1=WARN, 2=INFO, 3=DEBUG
-LOG_LEVEL=${LOG_LEVEL:-2}  # Por defecto INFO
+LOG_LEVEL=${LOG_LEVEL:-2} # Por defecto INFO
 
 # Archivo de destino para logs
 LOG_FILE=${LOG_FILE:-""} # Por defecto no se usa archivo
@@ -16,28 +16,28 @@ GRAY="\033[0;90m"
 RESET="\033[0m"
 
 _log() {
-    local level_num=$1
-    local level_name=$2
-    local color=$3
-    shift 3
-    local msg="$*"
+	local level_num=$1
+	local level_name=$2
+	local color=$3
+	shift 3
+	local msg="$*"
 
-    # Timestamp en formato YYYY-MM-DD HH:MM:SS
-    local ts
-    ts=$(date +"%Y-%m-%d %H:%M:%S")
+	# Timestamp en formato YYYY-MM-DD HH:MM:SS
+	local ts
+	ts=$(date +"%Y-%m-%d %H:%M:%S")
 
-    if [[ $LOG_LEVEL -ge $level_num ]]; then
-        echo -e "$ts ${color}[${level_name}]${RESET} $msg" >&2
+	if [[ $LOG_LEVEL -ge $level_num ]]; then
+		echo -e "$ts ${color}[${level_name}]${RESET} $msg" >&2
 
-        # Si hay un archivo definido, escribir ahí los logs sin colores
-        if [[ -n "$LOG_FILE" ]]; then
-            echo "$ts [$level_name] $msg" >> "$LOG_FILE"
-        fi
-    fi
+		# Si hay un archivo definido, escribir ahí los logs sin colores
+		if [[ -n "$LOG_FILE" ]]; then
+			echo "$ts [$level_name] $msg" >>"$LOG_FILE"
+		fi
+	fi
 }
 
-log_error()   { _log 0 "ERROR" "$RED" "$@"; }
-log_warn()    { _log 1 "WARN"  "$YELLOW" "$@"; }
-log_info()    { _log 2 "INFO"  "$BLUE" "$@"; }
-log_debug()   { _log 3 "DEBUG" "$GRAY" "$@"; }
+log_error() { _log 0 "ERROR" "$RED" "$@"; }
+log_warn() { _log 1 "WARN" "$YELLOW" "$@"; }
+log_info() { _log 2 "INFO" "$BLUE" "$@"; }
+log_debug() { _log 3 "DEBUG" "$GRAY" "$@"; }
 log_success() { _log 2 "SUCCESS" "$GREEN" "$@"; }
