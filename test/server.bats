@@ -122,16 +122,32 @@ setup_env() {
     mkdir -p "$OUT_DIR" "$DIST_DIR"
 }
 
-# Iniciar el servidor
-start_server() {
+# Iniciar el servidor para tests
+start_test_server() {
     local port="$1"
+
     setup_env "$port"
-    
-    cd src && ./server.sh &
+
+    # Asegurar puerto libre
+    cleanup_port "$port"
+    wait_for_port_free "$port" 5 || {
+        skip "No se pudo liberar puerto $port"
+    }
+
+    log_debug "Iniciando servidor de test en puerto $port"
+
+    # Arrancar servidor en background
+    (cd src && ./server.sh) &
     SERVER_PID=$!
-    cd - >/dev/null
+
+    log_debug "Servidor iniciado con PID: $SERVER_PID"
+    # Esperar que esté listo
+    if ! wait_for_server_ready "$port"; then
+        log_error "Servidor no arrancó correctamente"
+        skip "Servidor no arrancó en puerto $port"
+    fi
     
-    sleep 2
+    return 0
 }
 
 # Tests basicos - ESTADO ROJO
