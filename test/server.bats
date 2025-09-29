@@ -53,6 +53,12 @@ start_server() {
 }
 
 # Tests basicos - ESTADO ROJO
+@test "validacion debe funcionar" {
+    setup_env 8080
+    run bash -c "cd src && source check-env.sh && validate_env"
+    [ "$status" -eq 0 ]
+}
+
 @test "servidor debe arrancar" {
     start_server 8090
     
