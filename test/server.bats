@@ -7,7 +7,8 @@ BASE_TEST_DIR="$(dirname "$BATS_TEST_FILENAME")"
 source "$BASE_TEST_DIR/../src/logger.sh"
 
 # Configuración de logging para tests
-export LOG_LEVEL=${LOG_LEVEL:-1} # WARN
+export LOG_LEVEL=${LOG_LEVEL:-1} # WARN y ERROR
+export LOG_FILE="$BASE_TEST_DIR/test-execution.log"
 
 # Variables globales
 TEST_OUT_DIR="$BASE_TEST_DIR/test-out"
