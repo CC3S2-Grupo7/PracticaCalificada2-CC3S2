@@ -30,6 +30,67 @@ teardown() {
 
     # Limpiar carpetas de test
     rm -rf "$TEST_OUT_DIR" "$TEST_DIST_DIR" 2>/dev/null || true
+# Limpiar un puerto en específico
+cleanup_port() {
+    local port="$1"
+    local pids
+
+    # Obtener PIDs que estan usando el puerto
+    pids=$(lsof -ti:$port 2>/dev/null || true)
+
+    if [[ -n "$pids" ]]; then
+        log_debug "Liberando puerto $port (PIDs: $pids)"
+        echo "$pids" | xargs -r kill -KILL 2>/dev/null || true
+    fi
+}
+
+# Esperar que un puerto esté libre
+wait_for_port_free() {
+    local port=$1
+    local timeout=${2:-10}
+    local count=0
+
+    while lsof -i :$port >/dev/null 2>&1 && [ $count -lt $timeout ]; do
+        log_debug "Esperando que puerto $port se libere... ($count/$timeout)"
+        cleanup_port $port
+        sleep 1
+        ((count++))
+    done
+
+    if lsof -i :$port >/dev/null 2>&1; then
+        log_warn "Puerto $port sigue ocupado luego de $timeout segundos"
+        return 1
+    fi
+
+    log_debug "Puerto $port está libre"
+    return 0
+}
+
+# Esperar que el servidor esté listo
+wait_for_server_ready() {
+    local port="$1"
+    local timeout=${2:-15}
+    local count=0
+
+    while [[ $count -lt $timeout ]]; do
+        if nc -z 127.0.0.1 "$port" 2>/dev/null; then
+            log_debug "Servidor respondiendo en puerto $port"
+            sleep 1
+            return 0
+        fi
+
+        # Verificar que el proceso siga vivo
+        if [[ -n "${SERVER_PID:-}" ]] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
+            log_warn "Proceso del servidor murió durante el arranque"
+            return 1
+        fi
+
+        sleep 1
+        ((count++))
+    done
+
+    log_warn "Servidor no respondió en puerto $port después de $timeout segundos"
+    return 1
 }
 
 # Configurar entorno
