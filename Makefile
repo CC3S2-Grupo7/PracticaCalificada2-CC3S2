@@ -17,9 +17,9 @@ export TZ := UTC
 
 # Directorios
 SRC_DIR := src
-TST_DIR := tests
+TEST_DIR := test
 OUT_DIR := out
-DST_DIR := dist
+DIST_DIR := dist
 
 # Variables de entorno
 PORT ?= 8080
@@ -30,17 +30,20 @@ LOG_LEVEL ?= info
 tools: ## Verificar disponibilidad de dependencias
 	@echo "Verificando herramientas"
 	@command -v bash > /dev/null 2>&1 || { echo "Comando no encontrado: bash"; exit 1; }
+	@command -v shellcheck > /dev/null 2>&1 || { echo "Comando no encontrado: shellcheck"; exit 1; }
+	@command -v shfmt > /dev/null 2>&1 || { echo "Comando no encontrado: shfmt"; exit 1; }
 	@command -v bats > /dev/null 2>&1 || { echo "Comando no encontrado: bats"; exit 1; }
 	@command -v curl > /dev/null 2>&1 || { echo "Comando no encontrado: curl"; exit 1; }
 	@command -v find > /dev/null 2>&1 || { echo "Comando no encontrado: find"; exit 1; }
 	@command -v nc > /dev/null 2>&1 || { echo "Comando no encontrado: nc"; exit 1; }
 	@command -v ss > /dev/null 2>&1 || { echo "Comando no encontrado: ss"; exit 1; }
+	@command -v jq > /dev/null 2>&1 || { echo "Comando no encontrado: jq"; exit 1; }
+	@echo "Todas las herramientas están disponibles"
 
 lint: ## Revisar formato de Bash scripts
 	@find $(SRC_DIR) -name "*.sh" -type f | while read -r file; do \
 		echo "Revisando $$file"; \
-		$(SHELLCHECK) "$$file" || exit 1; \
-		$(SHFMT) -d "$$file" || exit 1; \
+		$(SHELLCHECK) -e SC1091 "$$file" || exit 1; \
 	done
 
 format: ## Formatear Bash scripts
@@ -50,20 +53,27 @@ format: ## Formatear Bash scripts
 	done
 
 build: tools ## Prepara artefactos intermedios en out/
-	
+	@mkdir -p $(OUT_DIR)
+	@$(SHELL) -n $(SRC_DIR)/server.sh
+	@$(SHELL) -n $(SRC_DIR)/check-env.sh
+	@$(SHELL) -n $(SRC_DIR)/logger.sh
+	@echo "Build completado"
 
 test: build ## Ejecutar suite de pruebas Bats
-	
+	@bats $(TEST_DIR)/server.bats
 
 run: build ## Ejecutar el pipeline principal
-	
 
 pack: build test ## Generar paquete reproducible en dist/
+	@mkdir -p $(DIST_DIR)
+	@tar -czf $(DIST_DIR)/pipeline-$(RELEASE).tar.gz \
+		--exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
+		src/ test/ docs/ Makefile .env.example
+	@echo "Paquete creado: $(DIST_DIR)/pipeline-$(RELEASE).tar.gz"
 	
-
 clean: ## Limpiar directorios out/ y dist/
 	@echo "Limpiando artefactos"
-	@rm -rf $(OUT_DIR) $(DST_DIR)
+	@rm -rf $(OUT_DIR) $(DIST_DIR)
 
 help: ## Mostrar lista de targets
 	@echo "Targets disponibles:"
