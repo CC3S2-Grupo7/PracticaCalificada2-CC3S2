@@ -5,7 +5,9 @@ Establecer el codebase, implementar un servicio mínimo con un endpoint /salud y
 
 ## Comandos Ejecutados y Resultados
 
-### 1. Inicio del servidor
+### Diego - Implementacion del servidor
+
+#### 1. Inicio del servidor
 ```bash
 ./src/server.sh 
 ```
@@ -15,7 +17,7 @@ Iniciando servidor en 127.0.0.1:8080
 Esperando conexión
 ```
 
-### 2. Lectura del endpoint /salud
+#### 2. Lectura del endpoint /salud
 ```bash
 curl http://127.0.0.1:8080/salud
 ```
@@ -28,7 +30,7 @@ curl http://127.0.0.1:8080/salud
 }
 ```
 
-### 3. Manejo de otros endpoints
+#### 3. Manejo de otros endpoints
 ```bash
 curl http://127.0.0.1:8080/otro
 ```
@@ -41,16 +43,133 @@ curl http://127.0.0.1:8080/otro
 }
 ```
 
+### Pedro - Testing y configuración de release
+
+#### 1. Configuración de variables de entorno
+```bash
+cp .env.example .env
+cat .env.example
+```
+**Salida:**
+```
+# Copiar a .env y ajustar valores cuando sea necesario
+
+# Puerto del servidor HTTP
+PORT=8080
+
+# Versión de release (formato semántico)
+RELEASE=0.1.0-alpha
+
+# Fecha de build (se genera automáticamente)
+BUILD_DATE=auto
+
+# Directorio de salida para artefactos intermedios
+OUT_DIR=out
+
+# Directorio de distribución
+DIST_DIR=dist
+
+# Nivel de logging (debug|info|warn|error)
+LOG_LEVEL=info
+```
+
+#### 2. Validación de entorno
+```bash
+PORT=8080 RELEASE=0.1.0-alpha OUT_DIR=out DIST_DIR=dist ./src/check-env.sh
+```
+
+**Salida:**
+```
+2025-09-29 00:03:06 [INFO] === Validando configuración ===
+2025-09-29 00:03:06 [WARN] Advertencias encontradas:
+2025-09-29 00:03:06 [WARN]   - OUT_DIR apunta a un directorio inexistente: out
+2025-09-29 00:03:06 [WARN]   - DIST_DIR apunta a un directorio inexistente: dist
+2025-09-29 00:03:06 [SUCCESS] Configuración válida
+2025-09-29 00:03:06 [INFO] Puerto: 8080, Release: 0.1.0-alpha, Directorios: out, dist
+```
+
+#### 3. Ejecución de pruebas Bats (ESTADO ROJO)
+```bash
+LOG_LEVEL=0 test/server.bats
+```
+**Salida:**
+```
+server.bats
+ ✗ servidor debe arrancar
+   (from function `start_server' in file test/server.bats, line 50,
+    in test file test/server.bats, line 57)
+     `start_server 8090' failed
+   /home/pv4r/UNI/2025-2/CC3S2/pc2/test/server.bats: line 50: cd: OLDPWD not set
+   2025-09-29 00:10:45 [ERROR] Servidor terminando
+   /home/pv4r/UNI/2025-2/CC3S2/pc2/test/server.bats: line 21: 123647 Killed                  cd src && ./server.sh
+ ✗ servidor debe responder en /salud
+   (from function `start_server' in file test/server.bats, line 50,
+    in test file test/server.bats, line 64)
+     `start_server 8091' failed
+   /home/pv4r/UNI/2025-2/CC3S2/pc2/test/server.bats: line 50: cd: OLDPWD not set
+   2025-09-29 00:10:45 [ERROR] Servidor terminando
+   /home/pv4r/UNI/2025-2/CC3S2/pc2/test/server.bats: line 21: 123670 Killed                  cd src && ./server.sh
+
+2 tests, 2 failures
+```
+
+#### 4. Ejecución de pruebas Bats (ESTADO VERDE)
+```bash
+LOG_LEVEL=3 bats test/server.bats
+```
+**Salida:**
+```
+server.bats
+ ✓ validacion debe funcionar
+ ✓ servidor debe arrancar
+ ✓ servidor debe responder en /salud
+
+3 tests, 0 failures
+```
+
+#### 5. Verificacion del Makefile
+```bash
+make pack
+```
+**Salida:**
+```
+Verificando herramientas
+Todas las herramientas están disponibles
+Build completado
+server.bats
+ ✓ validacion debe funcionar
+ ✓ servidor debe arrancar
+ ✓ servidor debe responder en /salud
+
+3 tests, 0 failures
+
+Paquete creado: dist/pipeline-0.1.0-alpha.tar.gz
+```
+
+
+
 ## Decisiones Técnicas Tomadas
 
-### Estructura de Directorios
+### Diego - Estructura de Directorios
 - **Decisión:** Separación de directorios en source (`src/`), tests (`tests/`), salidas (`out/`) y distribución (`dist/`)
 - **Razón:** Organización estándar que facilita automatización y empaquetado
 
-### Variables de Entorno
+### Diego - Variables de Entorno
 - **Decisión:** Usar `PORT`, `HOST`, `RELEASE` y `LOG_LEVEL` como variables de entorno
 - **Razón:** Cumplimiento 12-Factor Factor III - configuración externa
 
-### Dependencias de Targets
+### Diego - Dependencias de Targets
 - **Decisión:** Cadena `tools → build → test` y `build → run`
 - **Razón:** Garantizar verificación de dependencias antes de ejecución
+
+### Pedro - Uso de SIGKILL en cleanup
+- **Decisión:** Usar `pkill -9` para asegurar terminación de procesos
+- **Razón:** Evitar procesos huérfanos que puedan interferir con pruebas
+
+### Pedro - Metodologia RGR
+- **Decisión:** Commits separados mostrando como los test fallan primero y luego pasan
+- **Razón:** Demostrar TDD y asegurar calidad del código
+
+### Pedro - Ajustes por ShellCheck
+- **Decisión:** Añadir directivas para ignorar algunos warnings de ShellCheck
+- **Razón:** Mantener código limpio y evitar falsos positivos en análisis estático
