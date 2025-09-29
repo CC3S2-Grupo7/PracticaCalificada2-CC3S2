@@ -119,7 +119,10 @@ setup_env() {
     export RELEASE="0.1.0-test"
     export OUT_DIR="test/test-out"
     export DIST_DIR="test/test-dist"
+
     mkdir -p "$OUT_DIR" "$DIST_DIR"
+
+    log_debug "Entorno configurado: PORT=$PORT, RELEASE=$RELEASE"
 }
 
 # Iniciar el servidor para tests
@@ -150,7 +153,7 @@ start_test_server() {
     return 0
 }
 
-# Tests basicos - ESTADO ROJO
+# Tests basicos - ESTADO VERDE
 @test "validacion debe funcionar" {
     setup_env 8080
     run bash -c "cd src && source check-env.sh && validate_env"
@@ -158,14 +161,14 @@ start_test_server() {
 }
 
 @test "servidor debe arrancar" {
-    start_server 8090
+    start_test_server 8090
     
     kill -0 "$SERVER_PID"
     [ $? -eq 0 ]
 }
 
 @test "servidor debe responder en /salud" {
-    start_server 8091
+    start_test_server 8091
     
     run curl -s "http://127.0.0.1:8091/salud"
     [ "$status" -eq 0 ]
