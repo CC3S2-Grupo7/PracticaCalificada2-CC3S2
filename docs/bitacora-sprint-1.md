@@ -189,5 +189,7 @@ Ya estaba acoplado en server.sh
 ### 2.1 Scripts para verificar dependencias
 - **Decisión:** Que se maneje con validate_env
 - **Razón:** para maneter un orden y escalabilidad
-
+### 2.2 Manejar las señales (TERM, INT) para parada limpia
+- **Decisión:** ajustar la funcion de limpieza (cleanup) y el capturador de señales(trap)
+- **Razón:** arreglo de funcionamiento del manejo de señales
 
