@@ -202,3 +202,6 @@ Ya estaba acoplado en server.sh
 ### 3.2 Validacion códigos de respuesta HTTP
 - **Decisión:** hacer assets de las respuestas http
 - **Razón:**  para poder corroborar los request anteriores 
+##  4. Limpieza y trap
+- **Decisión:** corroborar el funcionamineto de la limpieza y el trap
+- **Razón:**  tener un mejor control de la memoria asi como los recursos del sistema 
