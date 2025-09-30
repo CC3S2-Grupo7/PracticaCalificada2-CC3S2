@@ -153,11 +153,41 @@ start_test_server() {
     return 0
 }
 
-# Tests basicos - ESTADO VERDE
-@test "validacion debe funcionar" {
+# Tests
+@test "validación de configuración debe funcionar correctamente" {
     setup_env 8080
     run bash -c "cd src && source check-env.sh && validate_env"
     [ "$status" -eq 0 ]
+}
+
+@test "validación debe fallar con puerto inválido" {
+    export PORT="abcdefg"
+    export RELEASE="0.1.0-test"
+    export OUT_DIR="test/test-out"
+    export DIST_DIR="test/test-dist"
+
+    run bash -c "cd src && source check-env.sh && validate_env"
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "PORT debe ser" ]]
+}
+
+@test "validación debe fallar con release inválido" {
+    setup_env 8080
+    export RELEASE="invalid-version"
+
+    run bash -c "cd src && source check-env.sh && validate_env"
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "RELEASE debe seguir formato" ]]
+}
+
+@test "validación debe fallar con directorios absolutos" {
+    setup_env 8080
+    export OUT_DIR="/tmp/test-out"
+    export DIST_DIR="/tmp/test-dist"
+
+    run bash -c "cd src && source check-env.sh && validate_env"
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "debe ser ruta relativa" ]]
 }
 
 @test "servidor debe arrancar" {
