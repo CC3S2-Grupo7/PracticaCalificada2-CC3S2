@@ -195,3 +195,5 @@ Ya estaba acoplado en server.sh
 ### 2.3 Estructurar el logging del servidor 
 - **Decisión:** Utiliza log_info en server.sh para registrar cada petición, alineándose con logger.sh 
 - **Razón:** peticion del servidor 
+## 3 testing de integracion 
+Pruebar básicas con curl al endpoint
