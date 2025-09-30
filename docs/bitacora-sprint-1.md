@@ -177,3 +177,7 @@ Paquete creado: dist/pipeline-0.1.0-alpha.tar.gz
 ### Pedro - Ajustes por ShellCheck
 - **Decisión:** Añadir directivas para ignorar algunos warnings de ShellCheck
 - **Razón:** Mantener código limpio y evitar falsos positivos en análisis estático
+
+### Andrew - Implementación y validación del Runtime
+#### 1. Implementación y ejecución del target 'run'
+Se modificó el `Makefile` para que `make run` ejecute el servidor.

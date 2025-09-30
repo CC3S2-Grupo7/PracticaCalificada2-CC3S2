@@ -1,7 +1,7 @@
 # Configuración inicial
 SHELL := /bin/bash
 SHELLCHECK := shellcheck
-SHFMT := shfmt
+SHFMT := shfmtsudo apt install shfmt 
 
 MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 
@@ -12,6 +12,7 @@ MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 export LC_ALL := C
 export LANG := C
 export TZ := UTC
+
 
 .PHONY: build clean format help lint pack run test tools
 
@@ -24,7 +25,9 @@ DIST_DIR := dist
 # Variables de entorno
 PORT ?= 8080
 RELEASE ?= 0.1.0-alpha
-LOG_LEVEL ?= info
+LOG_LEVEL ?= 2
+# Exportar variables de entorno para que los scripts Bash puedan leerlas
+export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
 
 # Targets
 tools: ## Verificar disponibilidad de dependencias
@@ -63,7 +66,8 @@ test: build ## Ejecutar suite de pruebas Bats
 	@bats $(TEST_DIR)/server.bats
 
 run: build ## Ejecutar el pipeline principal
-
+	@echo "Lanzando servidor..."
+	@$(SRC_DIR)/server.sh
 pack: build test ## Generar paquete reproducible en dist/
 	@mkdir -p $(DIST_DIR)
 	@tar -czf $(DIST_DIR)/pipeline-$(RELEASE).tar.gz \
