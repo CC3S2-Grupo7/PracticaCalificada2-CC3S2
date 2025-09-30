@@ -64,7 +64,7 @@ build: tools ## Prepara artefactos intermedios en out/
 
 test: build ## Ejecutar suite de pruebas Bats
 	@bats $(TEST_DIR)/server.bats
-
+	@bats $(TEST_DIR)/run_integration.bats
 run: build ## Ejecutar el pipeline principal
 	@echo "Lanzando servidor..."
 	@$(SRC_DIR)/server.sh
