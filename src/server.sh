@@ -128,8 +128,20 @@ start_server() {
 		log_error "Servidor no iniciado: configuracion invalida"
 		exit 1
 	fi
-
-	log_success "Iniciando servidor en $HOST:$PORT"
+	
+    # 2. Lógica del Modo Debug o roducción
+    if [[ "$RUNTIME_MODE" == "production" ]]; then
+        # En producción,se usan menos logs para  reducir la carga y el tamaño de los archivos.
+        # Nivel 1 = WARN. (Nivel por defecto es 2 = INFO)
+        export LOG_LEVEL=1 
+        log_warn "Ejecutando en modo PRODUCCIÓN :) (WARN/ERROR)."
+    else
+        # En debug, usamos el nivel por defecto 
+        log_info "Ejecutando en modo DEBUG. Logging detallado."
+    fi
+    
+	# 3. Iniciar el servidor con la configuración ajustada
+	log_success "Iniciando servidor en $HOST:$PORT (Modo: $RUNTIME_MODE)"
 
 	# Verificar que el puerto no este en uso
 	if nc -z "$HOST" "$PORT" 2>/dev/null; then
