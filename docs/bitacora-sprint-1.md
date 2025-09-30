@@ -205,3 +205,4 @@ Ya estaba acoplado en server.sh
 ##  4. Limpieza y trap
 - **Decisión:** corroborar el funcionamineto de la limpieza y el trap
 - **Razón:**  tener un mejor control de la memoria asi como los recursos del sistema 
+end
