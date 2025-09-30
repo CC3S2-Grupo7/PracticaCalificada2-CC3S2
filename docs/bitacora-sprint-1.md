@@ -179,5 +179,15 @@ Paquete creado: dist/pipeline-0.1.0-alpha.tar.gz
 - **Razón:** Mantener código limpio y evitar falsos positivos en análisis estático
 
 ### Andrew - Implementación y validación del Runtime
-#### 1. Implementación y ejecución del target 'run'
+## 1 Implementación y ejecución del target 'run'
 Se modificó el `Makefile` para que `make run` ejecute el servidor.
+###  1.1.Leer variables de entorno correctamente
+Se modifico el Log_level de "info" a "2"
+###  1.2 Verificar puerto disponible antes de arrancar
+Ya estaba acoplado en server.sh
+## 2 validaciones en runtime
+### 2.1 Scripts para verificar dependencias
+- **Decisión:** Que se maneje con validate_env
+- **Razón:** para maneter un orden y escalabilidad
+
+
