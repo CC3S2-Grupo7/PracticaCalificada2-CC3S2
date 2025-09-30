@@ -216,3 +216,20 @@ start_test_server() {
     [ "$http_code" -eq 200 ]
 }
 
+@test "servidor responde 404 y mensaje Not Found en endpoints inexistentes" {
+    start_test_server 8092
+
+    # Validar contenido del error
+    run curl -s --max-time 5 "http://127.0.0.1:8092/inexistente"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "Not Found" ]]
+
+    # Validar código HTTP con retry
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:8092/inexistente" || echo "FAILED")
+    if [[ "$http_code" != "404" ]]; then
+        sleep 1
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:8092/inexistente" || echo "FAILED")
+    fi
+    [ "$http_code" -eq 404 ]
+}
+
