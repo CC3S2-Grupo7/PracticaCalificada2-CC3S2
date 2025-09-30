@@ -177,3 +177,32 @@ Paquete creado: dist/pipeline-0.1.0-alpha.tar.gz
 ### Pedro - Ajustes por ShellCheck
 - **Decisión:** Añadir directivas para ignorar algunos warnings de ShellCheck
 - **Razón:** Mantener código limpio y evitar falsos positivos en análisis estático
+
+### Andrew - Implementación y validación del Runtime
+## 1 Implementación y ejecución del target 'run'
+Se modificó el `Makefile` para que `make run` ejecute el servidor.
+###  1.1.Leer variables de entorno correctamente
+Se modifico el Log_level de "info" a "2"
+###  1.2 Verificar puerto disponible antes de arrancar
+Ya estaba acoplado en server.sh
+## 2 validaciones en runtime
+### 2.1 Scripts para verificar dependencias
+- **Decisión:** Que se maneje con validate_env
+- **Razón:** para maneter un orden y escalabilidad
+### 2.2 Manejar las señales (TERM, INT) para parada limpia
+- **Decisión:** ajustar la funcion de limpieza (cleanup) y el capturador de señales(trap)
+- **Razón:** arreglo de funcionamiento del manejo de señales
+### 2.3 Estructurar el logging del servidor 
+- **Decisión:** Utiliza log_info en server.sh para registrar cada petición, alineándose con logger.sh 
+- **Razón:** peticion del servidor 
+## 3 testing de integracion 
+### 3.1 Pruebar básicas con curl al endpoint
+- **Decisión:** peticion del servidor Implementar test de integración con curl para validar el endpoint /salud
+- **Razón:**  corroborar que este en correcto funcionamiento todo lo que ya hemos realizado
+### 3.2 Validacion códigos de respuesta HTTP
+- **Decisión:** hacer assets de las respuestas http
+- **Razón:**  para poder corroborar los request anteriores 
+##  4. Limpieza y trap
+- **Decisión:** corroborar el funcionamineto de la limpieza y el trap
+- **Razón:**  tener un mejor control de la memoria asi como los recursos del sistema 
+end
