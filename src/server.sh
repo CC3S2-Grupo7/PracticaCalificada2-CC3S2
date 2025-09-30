@@ -116,8 +116,6 @@ EOF
 
 # Procesar request HTTP
 process_request() {
-
-
 	local request_line
 	read -r request_line || return 1
 
@@ -125,10 +123,15 @@ process_request() {
 		[[ -z "$header" || "$header" == $'\r' ]] && break
 	done
 
-	local method path protocol
-    # shellcheck disable=SC2034
+
+	local method path protocol start_time end_time duration
+	# shellcheck disable=SC2034
 	read -r method path protocol <<<"$request_line"
-	log_info "Request: $method $path"
+
+    # Captura el tiempo de inicio
+    start_time=$(date +%s%N) 
+
+	# Lógica para manejar los endpoints y generar la respuesta
 	case "$path" in
 	"/salud" | "/salud/")
 		if [[ "$method" == "GET" ]]; then
@@ -143,11 +146,21 @@ process_request() {
 		else
 			generate_response "405 Method Not Allowed" '{"error":"Method Not Allowed"}'
 		fi
-		;;	
+		;;
 	*)
 		not_found_endpoint "$path"
 		;;
 	esac
+    
+    # Captura el tiempo de fin
+    end_time=$(date +%s%N)
+    
+    # Calcula la duración en milisegundos
+    duration=$(( (end_time - start_time) / 1000000 ))
+
+    #ahora nos dara la latencia en ms
+	log_info "Request: $method $path | Latency: ${duration}ms"
+
 }
 
 start_server() {

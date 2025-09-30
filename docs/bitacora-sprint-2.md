@@ -180,7 +180,35 @@ Lanzando servidor...
 2025-09-30 20:53:36 [INFO] Request: GET /metrics
 2025-09-30 20:53:36 [INFO] Esperando conexion en 127.0.0.1:8080
 ```
-
+2.2
+Este ya esta implmentado en el codigo del sprint 1: 
+```
+local method path protocol
+    # shellcheck disable=SC2034
+	read -r method path protocol <<<"$request_line"
+	log_info "Request: $method $path"
+	case "$path" in
+```
+lo modificamos para que nos de la latencia(Agregamos un timer de inicio a fin)
+```
+i5@DESKTOP-1T2U4F6:~/trabajopc2/PracticaCalificada2-CC3S2$ RUNTIME_MODE=debug make run
+Verificando herramientas
+Todas las herramientas están disponibles
+Build completado
+Lanzando servidor...
+2025-09-30 21:07:35 [WARN] Advertencias encontradas:
+2025-09-30 21:07:35 [WARN]   - DIST_DIR apunta a un directorio inexistente: dist
+2025-09-30 21:07:35 [INFO] Ejecutando en modo DEBUG. Logging detallado.
+2025-09-30 21:07:35 [SUCCESS] Iniciando servidor en 127.0.0.1:8080 (Modo: debug)
+2025-09-30 21:07:36 [INFO] Esperando conexion en 127.0.0.1:8080
+2025-09-30 21:07:41 [INFO] Request: GET /metrics | Latency: 19ms
+2025-09-30 21:07:41 [INFO] Esperando conexion en 127.0.0.1:8080
+2025-09-30 21:07:48 [INFO] Request: GET /metrics | Latency: 17ms
+2025-09-30 21:07:49 [INFO] Esperando conexion en 127.0.0.1:8080
+2025-09-30 21:07:54 [INFO] Request: GET /salud | Latency: 16ms
+2025-09-30 21:07:54 [INFO] Esperando conexion en 127.0.0.1:8080
+```
+2.3
 ## Decisiones Técnicas Tomadas
 
 
@@ -203,8 +231,8 @@ Lanzando servidor...
 - **Decisión:** Implementar /metrics simple para que nos envie el uptime 
 - **Razón:** poder implemntar a posteriori mas funciones para la metric
 #### Logging de peticiones
-- **Decisión:** 
-- **Razón:**
+- **Decisión:** mejoramos un poco el logging de peticion para que nos brinde la latencia 
+- **Razón:** tener un mejor control de las peticion curl y ver cuando algo falla 
 #### Reporte de salud del servicio
 - **Decisión:** 
 - **Razón:**
