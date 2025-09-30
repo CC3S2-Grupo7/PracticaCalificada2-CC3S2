@@ -56,6 +56,28 @@ validate_directory() {
 	return 0
 }
 
+#validacion de runtime_mode
+validate_runtime_mode() {
+    local valid_modes=("debug" "production")
+    local found=0
+
+    # Itera sobre los modos válidos y compara con el valor actual
+    for mode in "${valid_modes[@]}"; do
+        # Comparamos el valor de RUNTIME_MODE (usando :- para evitar error si no está definida, aunque ya la definimos)
+        if [[ "${RUNTIME_MODE:-}" == "$mode" ]]; then
+            found=1
+            break
+        fi
+    done
+
+    if ((found == 0)); then
+        # Si no se encuentra el modo en la lista, registra un error crítico
+        ERRORS+=("RUNTIME_MODE debe ser 'debug' o 'production', actual: ${RUNTIME_MODE:-'no definido'}")
+        return 1
+    fi
+
+    return 0
+}
 # Validar todas las variables de entorno necesarias
 validate_env() {
 	ERRORS=() # Limpiar los errores anteriores
@@ -66,7 +88,8 @@ validate_env() {
 	validate_release || status=1
 	validate_directory OUT_DIR || status=1
 	validate_directory DIST_DIR || status=1
-
+    # Llama a la nueva validación:
+    validate_runtime_mode || status=1
 	# Reportar errores
 	if ((${#ERRORS[@]} > 0)); then
 		log_error "Errores encontrados:"

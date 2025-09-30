@@ -26,8 +26,9 @@ DIST_DIR := dist
 PORT ?= 8080
 RELEASE ?= 0.1.0-alpha
 LOG_LEVEL ?= 2
+RUNTIME_MODE ?= debug 
 # Exportar variables de entorno para que los scripts Bash puedan leerlas
-export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
+export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR RUNTIME_MODE
 
 # Targets
 tools: ## Verificar disponibilidad de dependencias
