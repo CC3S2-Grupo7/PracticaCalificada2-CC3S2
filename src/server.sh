@@ -53,6 +53,27 @@ $content
 
 EOF
 }
+#Endpoint /metrics 
+metrics_endpoint() {
+	local timestamp
+	timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+	local json_response
+	json_response=$(
+		cat <<EOF
+{
+    "service": "pipeline-cle",
+    "version": "${RELEASE:-unknown}",
+    "status": "up",
+    "build_date": "${BUILD_DATE:-unknown}",
+    "uptime_seconds": $(($(date +%s) - SERVER_START)),
+    "timestamp": "$timestamp"
+}
+EOF
+	)
+
+	generate_response "200 OK" "$json_response"
+}
 
 # Endpoint /salud
 health_endpoint() {
@@ -116,6 +137,13 @@ process_request() {
 			generate_response "405 Method Not Allowed" '{"error":"Method Not Allowed"}'
 		fi
 		;;
+	"/metrics" | "/metrics/")
+		if [[ "$method" == "GET" ]]; then
+			metrics_endpoint
+		else
+			generate_response "405 Method Not Allowed" '{"error":"Method Not Allowed"}'
+		fi
+		;;	
 	*)
 		not_found_endpoint "$path"
 		;;
@@ -134,7 +162,7 @@ start_server() {
         # En producción,se usan menos logs para  reducir la carga y el tamaño de los archivos.
         # Nivel 1 = WARN. (Nivel por defecto es 2 = INFO)
         export LOG_LEVEL=1 
-        log_warn "Ejecutando en modo PRODUCCIÓN :) (WARN/ERROR)."
+        log_warn "Ejecutando en modo PRODUCCIÓN :) ."
     else
         # En debug, usamos el nivel por defecto 
         log_info "Ejecutando en modo DEBUG. Logging detallado."

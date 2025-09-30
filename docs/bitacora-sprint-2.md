@@ -132,6 +132,55 @@ Lanzando servidor...
 2025-09-30 20:36:34 [WARN] Ejecutando en modo PRODUCCIÓN :) (WARN/ERROR).
 ```
 2.
+Creacuib del endpoint /metrics que devuelva informacion del sistema 
+```
+metrics_endpoint() {
+	local timestamp
+	timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+	local json_response
+	json_response=$(
+		cat <<EOF
+{
+    "service": "pipeline-cle",
+    "version": "${RELEASE:-unknown}",
+    "status": "up",
+    "build_date": "${BUILD_DATE:-unknown}",
+    "uptime_seconds": $(($(date +%s) - SERVER_START)),
+    "timestamp": "$timestamp"
+}
+EOF
+	)
+
+	generate_response "200 OK" "$json_response"
+}
+```
+```
+y agregamos en las peticiones la metrica(Por ahora para el metodo get)
+"/metrics" | "/metrics/")
+		if [[ "$method" == "GET" ]]; then
+			metrics_endpoint
+		else
+			generate_response "405 Method Not Allowed" '{"error":"Method Not Allowed"}'
+		fi
+		;;	
+```
+Ahora verificamos su funcionamiento:
+```
+i5@DESKTOP-1T2U4F6:~/trabajopc2/PracticaCalificada2-CC3S2$ RUNTIME_MODE=debug make run
+Verificando herramientas
+Todas las herramientas están disponibles
+Build completado
+Lanzando servidor...
+2025-09-30 20:53:18 [WARN] Advertencias encontradas:
+2025-09-30 20:53:18 [WARN]   - DIST_DIR apunta a un directorio inexistente: dist
+2025-09-30 20:53:18 [INFO] Ejecutando en modo DEBUG. Logging detallado.
+2025-09-30 20:53:18 [SUCCESS] Iniciando servidor en 127.0.0.1:8080 (Modo: debug)
+2025-09-30 20:53:18 [INFO] Esperando conexion en 127.0.0.1:8080
+2025-09-30 20:53:36 [INFO] Request: GET /metrics
+2025-09-30 20:53:36 [INFO] Esperando conexion en 127.0.0.1:8080
+```
+
 ## Decisiones Técnicas Tomadas
 
 
@@ -150,6 +199,25 @@ Lanzando servidor...
 - **Decisión:** implementar un startup diferenciado entre debug y prodution
 - **Razón:** Para poder comprender que a diferentes necesidades diferente informacion que se envia
 ### 2.Monitoreo básico
+#### Endpoint /metrics simple
+- **Decisión:** Implementar /metrics simple para que nos envie el uptime 
+- **Razón:** poder implemntar a posteriori mas funciones para la metric
+#### Logging de peticiones
+- **Decisión:** 
+- **Razón:**
+#### Reporte de salud del servicio
+- **Decisión:** 
+- **Razón:**
+### 3. Testing de runtime 
+#### Casos Bats para diferentes configuraciones
+- **Decisión:** 
+- **Razón:**
+#### Tests de timeout y recuperación
+- **Decisión:** 
+- **Razón:**
+#### Validación de limpieza
+- **Decisión:** 
+- **Razón:**
 
 
 
