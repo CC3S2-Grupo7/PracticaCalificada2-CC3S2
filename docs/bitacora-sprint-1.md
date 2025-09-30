@@ -5,9 +5,11 @@ Establecer el codebase, implementar un servicio mínimo con un endpoint /salud y
 
 ## Comandos Ejecutados y Resultados
 
+
 ### Diego - Implementacion del servidor
 
 #### 1. Inicio del servidor
+
 ```bash
 ./src/server.sh 
 ```
@@ -17,7 +19,9 @@ Iniciando servidor en 127.0.0.1:8080
 Esperando conexión
 ```
 
+
 #### 2. Lectura del endpoint /salud
+
 ```bash
 curl http://127.0.0.1:8080/salud
 ```
