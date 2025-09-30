@@ -209,6 +209,48 @@ Lanzando servidor...
 2025-09-30 21:07:54 [INFO] Esperando conexion en 127.0.0.1:8080
 ```
 2.3
+Se añadio el reporte de el disco raiz y la memoria con la que aun se cuenta al momneto de utilizar el servidor 
+```
+mem_info=$(free -h 2>/dev/null | grep Mem | awk '{print $2 " total, " $3 " usado"}')
+    mem_info="${mem_info:-'N/A (free not found)'}"
+    
+    # Usamos 'df' para simular info de disco (solo si está disponible)
+    disk_info=$(df -h / 2>/dev/null | grep / | awk '{print $5 " usado"}')
+    disk_info="${disk_info:-'N/A (df not found)'}"
+
+
+	local json_response
+	json_response=$(
+		cat <<EOF
+{
+    "service": "pipeline-cle",
+    "status": "up", 
+    "version": "${RELEASE:-unknown}",
+    "runtime_mode": "$RUNTIME_MODE",
+    "uptime_seconds": $(($(date +%s) - SERVER_START)),
+    "timestamp": "$timestamp",
+    "health_diagnostics": {
+        "memoria": "$mem_info",
+        "disco raiz": "$disk_info"
+    }
+}
+EOF
+	)
+```
+respuesta :
+```
+"service": "pipeline-cle",
+    "status": "up", 
+    "version": "0.1.0-alpha",
+    "runtime_mode": "debug",
+    "uptime_seconds": 5,
+    "timestamp": "2025-09-30T21:24:21Z",
+    "health_diagnostics": {
+        "memoria": "3.8Gi total, 1.4Gi usado",
+        "disco raiz": "1% usado"
+    }
+```
+3    
 ## Decisiones Técnicas Tomadas
 
 
@@ -234,8 +276,8 @@ Lanzando servidor...
 - **Decisión:** mejoramos un poco el logging de peticion para que nos brinde la latencia 
 - **Razón:** tener un mejor control de las peticion curl y ver cuando algo falla 
 #### Reporte de salud del servicio
-- **Decisión:** 
-- **Razón:**
+- **Decisión:** Mostar el estado de la memoria y el disco
+- **Razón:** poder saber si se puede seguir manteneind el servidor 
 ### 3. Testing de runtime 
 #### Casos Bats para diferentes configuraciones
 - **Decisión:** 

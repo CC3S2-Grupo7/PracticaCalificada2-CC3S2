@@ -57,22 +57,39 @@ EOF
 metrics_endpoint() {
 	local timestamp
 	timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    # Capturar datos de rendimiento/salud 
+    local mem_info disk_info
+
+    # Usamos 'free' para simular info de memoria (solo si está disponible)
+    mem_info=$(free -h 2>/dev/null | grep Mem | awk '{print $2 " total, " $3 " usado"}')
+    mem_info="${mem_info:-'N/A (free not found)'}"
+    
+    # Usamos 'df' para simular info de disco (solo si está disponible)
+    disk_info=$(df -h / 2>/dev/null | grep / | awk '{print $5 " usado"}')
+    disk_info="${disk_info:-'N/A (df not found)'}"
+
 
 	local json_response
 	json_response=$(
 		cat <<EOF
 {
     "service": "pipeline-cle",
+    "status": "up", 
     "version": "${RELEASE:-unknown}",
-    "status": "up",
-    "build_date": "${BUILD_DATE:-unknown}",
+    "runtime_mode": "$RUNTIME_MODE",
     "uptime_seconds": $(($(date +%s) - SERVER_START)),
-    "timestamp": "$timestamp"
+    "timestamp": "$timestamp",
+    "health_diagnostics": {
+        "memoria": "$mem_info",
+        "disco raiz": "$disk_info"
+    }
 }
 EOF
 	)
 
 	generate_response "200 OK" "$json_response"
+
 }
 
 # Endpoint /salud
