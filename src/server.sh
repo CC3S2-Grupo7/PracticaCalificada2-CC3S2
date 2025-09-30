@@ -95,6 +95,8 @@ EOF
 
 # Procesar request HTTP
 process_request() {
+
+
 	local request_line
 	read -r request_line || return 1
 
@@ -105,9 +107,7 @@ process_request() {
 	local method path protocol
     # shellcheck disable=SC2034
 	read -r method path protocol <<<"$request_line"
-
-	echo "Procesando request: $method $path" >&2
-
+	log_info "Request: $method $path"
 	case "$path" in
 	"/salud" | "/salud/")
 		if [[ "$method" == "GET" ]]; then

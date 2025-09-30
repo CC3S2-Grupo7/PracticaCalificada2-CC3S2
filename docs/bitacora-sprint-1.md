@@ -192,4 +192,6 @@ Ya estaba acoplado en server.sh
 ### 2.2 Manejar las señales (TERM, INT) para parada limpia
 - **Decisión:** ajustar la funcion de limpieza (cleanup) y el capturador de señales(trap)
 - **Razón:** arreglo de funcionamiento del manejo de señales
-
+### 2.3 Estructurar el logging del servidor 
+- **Decisión:** Utiliza log_info en server.sh para registrar cada petición, alineándose con logger.sh 
+- **Razón:** peticion del servidor 
