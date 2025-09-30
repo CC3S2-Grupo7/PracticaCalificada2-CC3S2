@@ -196,4 +196,9 @@ Ya estaba acoplado en server.sh
 - **Decisión:** Utiliza log_info en server.sh para registrar cada petición, alineándose con logger.sh 
 - **Razón:** peticion del servidor 
 ## 3 testing de integracion 
-Pruebar básicas con curl al endpoint
+### 3.1 Pruebar básicas con curl al endpoint
+- **Decisión:** peticion del servidor Implementar test de integración con curl para validar el endpoint /salud
+- **Razón:**  corroborar que este en correcto funcionamiento todo lo que ya hemos realizado
+### 3.2 Validacion códigos de respuesta HTTP
+- **Decisión:** hacer assets de las respuestas http
+- **Razón:**  para poder corroborar los request anteriores 
