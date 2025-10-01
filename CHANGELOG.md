@@ -1,3 +1,7 @@
+## [0.3.0-beta] - 2025-10-01
+- d9a7687 Merge branch 'vargas-release' into release, prueba antes del PR
+- 1c407fb Agregar parte de 'Testing y configuracion del release' a la bitacora del sprint 2
+
 ## [0.2.0-beta] - 2025-10-01
 - c5869c7 Merge branch 'vargas-release' into release
 - 1f4cae9 Cambios en guia-releases, considerando todos los pasos del target
