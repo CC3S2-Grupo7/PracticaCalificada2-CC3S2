@@ -32,6 +32,7 @@ export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
 # Otra variables
 BUILD_INFO := $(OUT_DIR)/build-info.txt
 TIMESTAMP := $(shell date +%s)
+GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
 SRC_SCRIPTS := $(wildcard $(SRC_DIR)/*.sh)
 TEST_BATS := $(wildcard $(TEST_DIR)/*.bats)
@@ -126,6 +127,12 @@ $(BUILD_INFO): $(BUILD_TARGETS)
 	@mkdir -p $(@D)
 	@echo "Release: $(RELEASE)" > $@
 	@echo "Timestamp: $(TIMESTAMP)" >> $@
+	@echo "Git Hash: $(GIT_HASH)" >> $@
+	@echo "Scripts procesados: $(words $(SRC_SCRIPTS))" >> $@
+	@echo "Tests disponibles: $(words $(TEST_BATS))" >> $@
+	@echo "Artifacts:" >> $@
+	@echo "	build_info: $(BUILD_INFO)" >> $@
+	@echo "	package: $(PACKAGE_TAR)" >> $@
 	@echo "Build completado"
 
 $(OUT_DIR)/%.executed: $(TEST_DIR)/%.bats $(BUILD_INFO)
