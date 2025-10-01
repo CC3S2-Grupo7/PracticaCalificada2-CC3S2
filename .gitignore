@@ -1,0 +1,9 @@
+# Directorios de build
+out/
+dist/
+
+# Variables de entorno locales
+.env
+
+# Archivos de log
+*.log
