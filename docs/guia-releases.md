@@ -14,29 +14,23 @@
 
 ## Proceso de Release
 
-### 1. Preparar release
+### 1. Cambiar a una rama `release` temporal
 ```bash
-# Verificar que todo esté commiteado
-git status
-
-# Ejecutar tests
-make test
+# Crear y cambiar a una rama temporal
+git switch -c release
 ```
 
-### 2. Crear release
+### 2. Crear la release
 ```bash
-# Generar changelog y tag
-make release RELEASE=0.1.0-beta
-
-# Verificar tag
-git tag -l
+# Escoger la versión y ejecutar
+RELEASE=<versión> make release
 ```
 
-### 3. Empaquetar
+### 3. Verificar los archivos generados
 ```bash
-# Crear el artefacto reproducible
-make pack RELEASE=0.1.0-beta
+# Verificar los archivos en out
+ls out/
 
-# Verificar el checksum
-cat dist/pipeline-0.1.0-beta.tar.gz.sha256
+# Verificar los archivos en dist
+ls dist/
 ```

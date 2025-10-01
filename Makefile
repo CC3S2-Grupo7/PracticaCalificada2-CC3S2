@@ -196,7 +196,7 @@ $(PACKAGE_TAR): $(BUILD_INFO) $(TEST_TARGETS)
 	@mkdir -p $(@D)
 	@# Crear archivo de metadata
 	@echo "release: $(RELEASE)" > $(OUT_DIR)/release-info.txt
-	@echo "build_date: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(OUT_DIR)/release-info.txt
+	@echo "build_date: $$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(OUT_DIR)/release-info.txt
 	@echo "git_commit: $(GIT_HASH)" >> $(OUT_DIR)/release-info.txt
 	@# Crear tarball reproducible
 	@tar --sort=name \
