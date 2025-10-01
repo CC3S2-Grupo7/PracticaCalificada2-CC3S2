@@ -22,6 +22,9 @@ OUT_DIR := out
 DIST_DIR := dist
 TIMESTAMP_DIR := .make
 
+# Flag para saltar tests cuando se ejecuta pack
+PACK_SKIP_TEST ?= 0
+
 # Variables de entorno
 PORT ?= 8080
 RELEASE ?= 0.1.0-beta
@@ -41,6 +44,7 @@ TEST_BATS := $(wildcard $(TEST_DIR)/*.bats)
 # Timestamps para caché incremental
 BUILD_STAMP := $(TIMESTAMP_DIR)/build.stamp
 TEST_STAMP := $(TIMESTAMP_DIR)/test.stamp
+TEST_BATS := $(filter-out test/makefile.bats, $(wildcard test/*.bats))
 LINT_STAMP := $(TIMESTAMP_DIR)/lint.stamp
 FORMAT_STAMP := $(TIMESTAMP_DIR)/format.stamp
 TOOLS_STAMP := $(TIMESTAMP_DIR)/tools.stamp
@@ -223,7 +227,13 @@ $(TEST_STAMP): $(BUILD_STAMP) $(TEST_BATS) | $(TIMESTAMP_DIR)
 	@touch $@
 
 # Pack: crear tarball reproducible
-$(PACKAGE_TAR): $(TEST_STAMP) | $(DIST_DIR)
+$(PACKAGE_TAR): $(DIST_DIR)
+ifeq ($(PACK_SKIP_TEST),1)
+	@echo "Saltando tests en pack"
+else
+	@# Asegurarse de que los tests pasen antes de empaquetar
+	$(TEST_STAMP)
+endif
 	@echo "Empaquetando release $(RELEASE) de forma reproducible"
 	@tar --sort=name \
 	     --owner=0 --group=0 --numeric-owner \
