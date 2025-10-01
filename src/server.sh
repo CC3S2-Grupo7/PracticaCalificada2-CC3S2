@@ -32,7 +32,7 @@ cleanup() {
 
 	log_success "Servidor detenido correctamente"
 
-	exit $exit_code 
+	exit $exit_code
 
 }
 trap cleanup SIGINT SIGTERM EXIT
@@ -96,7 +96,6 @@ EOF
 # Procesar request HTTP
 process_request() {
 
-
 	local request_line
 	read -r request_line || return 1
 
@@ -105,7 +104,7 @@ process_request() {
 	done
 
 	local method path protocol
-    # shellcheck disable=SC2034
+	# shellcheck disable=SC2034
 	read -r method path protocol <<<"$request_line"
 	log_info "Request: $method $path"
 	case "$path" in

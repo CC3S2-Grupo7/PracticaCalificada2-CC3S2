@@ -29,10 +29,14 @@ LOG_LEVEL ?= 2
 # Exportar variables de entorno para que los scripts Bash puedan leerlas
 export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
 
+# Otra variables
+BUILD_INFO := $(OUT_DIR)/build-info.txt
+TIMESTAMP := $(shell date +%s)
 REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
 SRC_SCRIPTS := $(wildcard $(SRC_DIR)/*.sh)
 LINT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.lint)
 FORMAT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.format)
+BUILD_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.built)
 
 # Targets
 tools: $(OUT_DIR)/tools.verified ## Verificar disponibilidad de dependencias
@@ -41,12 +45,7 @@ lint: $(LINT_TARGETS) ## Revisar formato de Bash scripts
 
 format: $(FORMAT_TARGETS) ## Formatear Bash scripts
 
-build: tools ## Prepara artefactos intermedios en out/
-	@mkdir -p $(OUT_DIR)
-	@$(SHELL) -n $(SRC_DIR)/server.sh
-	@$(SHELL) -n $(SRC_DIR)/check-env.sh
-	@$(SHELL) -n $(SRC_DIR)/logger.sh
-	@echo "Build completado"
+build: $(BUILD_TARGETS) $(BUILD_INFO) ## Prepara artefactos intermedios en out/
 
 test: build ## Ejecutar suite de pruebas Bats
 	@bats $(TEST_DIR)/server.bats
@@ -98,3 +97,16 @@ $(OUT_DIR)/%.format: $(SRC_DIR)/%.sh | $(OUT_DIR)/tools.verified
 	@$(SHFMT) -w "$<"
 	@mkdir -p $(@D)
 	@touch $@
+
+$(OUT_DIR)/%.built: $(SRC_DIR)/%.sh
+	@echo "Validando sintaxis de $<"
+	@$(SHELL) -n "$<"
+	@mkdir -p $(@D)
+	@touch $@
+
+$(BUILD_INFO): $(BUILD_TARGETS)
+	@echo "Generando información de build"
+	@mkdir -p $(@D)
+	@echo "Release: $(RELEASE)" > $@
+	@echo "Timestamp: $(TIMESTAMP)" >> $@
+	@echo "Build completado"
