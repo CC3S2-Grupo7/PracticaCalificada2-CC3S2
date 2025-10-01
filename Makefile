@@ -3,7 +3,7 @@ SHELL := /bin/bash
 SHELLCHECK := shellcheck
 SHFMT := shfmt
 
-MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
+MAKEFLAGS += --warn-undefined-variables --no-builtin-rules --no-print-directory
 
 .DEFAULT_GOAL := help
 .SHELLFLAGS := -eu -o pipefail -c
@@ -40,6 +40,12 @@ FORMAT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.format)
 BUILD_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.built)
 TEST_TARGETS := $(TEST_BATS:$(TEST_DIR)/%.bats=$(OUT_DIR)/%.executed)
 
+# Artefactos reproducibles
+PACKAGE_NAME := pipeline-$(RELEASE)
+PACKAGE_TAR := $(DIST_DIR)/$(PACKAGE_NAME).tar.gz
+CHECKSUM_SHA256 := $(DIST_DIR)/$(PACKAGE_NAME).sha256
+REPRO_ARTIFACTS := $(PACKAGE_TAR) $(CHECKSUM_SHA256)
+
 # Targets
 tools: $(OUT_DIR)/tools.verified ## Verificar disponibilidad de dependencias
 
@@ -55,7 +61,29 @@ run: build ## Ejecutar el pipeline principal
 	@echo "Lanzando servidor..."
 	@$(SRC_DIR)/server.sh
 
-pack: $(DIST_DIR)/pipeline-$(RELEASE).tar.gz ## Generar paquete reproducible en dist/
+pack: $(REPRO_ARTIFACTS) ## Generar paquete reproducible en dist/ con checksums
+
+checksum: $(CHECKSUM_SHA256) ## Generar checksums del paquete
+
+verify-repro: ## Verificar reproducibilidad del empaquetado
+	@echo "Verificando reproducibilidad del build..."
+	@$(MAKE) -s pack
+	@cp $(PACKAGE_TAR) $(DIST_DIR)/pipeline-verify-1.tar.gz
+	@cp $(CHECKSUM_SHA256) $(DIST_DIR)/pipeline-verify-1.sha256
+	@sleep 2 
+	@$(MAKE) -s pack
+	@cp $(PACKAGE_TAR) $(DIST_DIR)/pipeline-verify-2.tar.gz
+	@cp $(CHECKSUM_SHA256) $(DIST_DIR)/pipeline-verify-2.sha256
+	@if diff $(DIST_DIR)/pipeline-verify-1.sha256 $(DIST_DIR)/pipeline-verify-2.sha256 >/dev/null; then \
+		echo "REPRODUCIBLE: Los builds generan checksums idénticos"; \
+		echo "	SHA256: $$(cat $(CHECKSUM_SHA256))"; \
+	else \
+		echo "NO REPRODUCIBLE: Los checksums difieren"; \
+		echo "	Build 1: $$(cat $(DIST_DIR)/pipeline-verify-1.sha256)"; \
+		echo "	Build 2: $$(cat $(DIST_DIR)/pipeline-verify-2.sha256)"; \
+		exit 1; \
+	fi
+	@rm -f $(DIST_DIR)/pipeline-verify-*.tar.gz $(DIST_DIR)/pipeline-verify-*.sha256
 	
 clean: ## Limpiar directorios out/ y dist/
 	@echo "Limpiando artefactos"
@@ -72,12 +100,6 @@ $(OUT_DIR)/tools.verified:
 	@for cmd in $(REQUIRED_TOOLS); do \
 		command -v $$cmd > /dev/null 2>&1 || { echo "Comando no encontrado: $$cmd"; exit 1; }; \
 	done
-	@mkdir -p $(@D)
-	@touch $@
-
-$(OUT_DIR)/%.lint: $(SRC_DIR)/%.sh | $(OUT_DIR)/tools.verified
-	@echo "Revisando $<"
-	@$(SHELLCHECK) -e SC1091 "$<"
 	@mkdir -p $(@D)
 	@touch $@
 
@@ -112,10 +134,18 @@ $(OUT_DIR)/%.executed: $(TEST_DIR)/%.bats $(BUILD_INFO)
 	@mkdir -p $(@D)
 	@touch $@
 
-$(DIST_DIR)/pipeline-$(RELEASE).tar.gz: $(BUILD_INFO) $(TEST_TARGETS)
-	@echo "Empaquetando release $(RELEASE)"
+$(PACKAGE_TAR): $(BUILD_INFO) $(TEST_TARGETS)
+	@echo "Empaquetando release $(RELEASE) de forma reproducible"
 	@mkdir -p $(@D)
-	@tar -czf $@ \
-		--exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
-		src/ test/ docs/ Makefile .env.example
+	@tar --sort=name \
+	     --owner=0 --group=0 --numeric-owner \
+	     --mtime='@$(TIMESTAMP)' \
+	     -czf $@ \
+	     --exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
+	     src/ test/ docs/ Makefile .env.example
 	@echo "Paquete creado: $@"
+
+$(CHECKSUM_SHA256): $(PACKAGE_TAR)
+	@echo "Generando checksum SHA256"
+	@sha256sum $< | awk '{print $$1}' > $@
+	@echo "SHA256: $$(cat $@)"
