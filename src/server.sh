@@ -53,22 +53,21 @@ $content
 
 EOF
 }
-#Endpoint /metrics 
+#Endpoint /metrics
 metrics_endpoint() {
 	local timestamp
 	timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    
-    # Capturar datos de rendimiento/salud 
-    local mem_info disk_info
 
-    # Usamos 'free' para simular info de memoria (solo si está disponible)
-    mem_info=$(free -h 2>/dev/null | grep Mem | awk '{print $2 " total, " $3 " usado"}')
-    mem_info="${mem_info:-'N/A (free not found)'}"
-    
-    # Usamos 'df' para simular info de disco (solo si está disponible)
-    disk_info=$(df -h / 2>/dev/null | grep / | awk '{print $5 " usado"}')
-    disk_info="${disk_info:-'N/A (df not found)'}"
+	# Capturar datos de rendimiento/salud
+	local mem_info disk_info
 
+	# Usamos 'free' para simular info de memoria (solo si está disponible)
+	mem_info=$(free -h 2>/dev/null | grep Mem | awk '{print $2 " total, " $3 " usado"}')
+	mem_info="${mem_info:-'N/A (free not found)'}"
+
+	# Usamos 'df' para simular info de disco (solo si está disponible)
+	disk_info=$(df -h / 2>/dev/null | grep / | awk '{print $5 " usado"}')
+	disk_info="${disk_info:-'N/A (df not found)'}"
 
 	local json_response
 	json_response=$(
@@ -140,13 +139,12 @@ process_request() {
 		[[ -z "$header" || "$header" == $'\r' ]] && break
 	done
 
-
 	local method path protocol start_time end_time duration
 	# shellcheck disable=SC2034
 	read -r method path protocol <<<"$request_line"
 
-    # Captura el tiempo de inicio
-    start_time=$(date +%s%N) 
+	# Captura el tiempo de inicio
+	start_time=$(date +%s%N)
 
 	# Lógica para manejar los endpoints y generar la respuesta
 	case "$path" in
@@ -168,14 +166,14 @@ process_request() {
 		not_found_endpoint "$path"
 		;;
 	esac
-    
-    # Captura el tiempo de fin
-    end_time=$(date +%s%N)
-    
-    # Calcula la duración en milisegundos
-    duration=$(( (end_time - start_time) / 1000000 ))
 
-    #ahora nos dara la latencia en ms
+	# Captura el tiempo de fin
+	end_time=$(date +%s%N)
+
+	# Calcula la duración en milisegundos
+	duration=$(((end_time - start_time) / 1000000))
+
+	#ahora nos dara la latencia en ms
 	log_info "Request: $method $path | Latency: ${duration}ms"
 
 }
@@ -186,18 +184,18 @@ start_server() {
 		log_error "Servidor no iniciado: configuracion invalida"
 		exit 1
 	fi
-	
-    # 2. Lógica del Modo Debug o roducción
-    if [[ "$RUNTIME_MODE" == "production" ]]; then
-        # En producción,se usan menos logs para  reducir la carga y el tamaño de los archivos.
-        # Nivel 1 = WARN. (Nivel por defecto es 2 = INFO)
-        export LOG_LEVEL=1 
-        log_warn "Ejecutando en modo PRODUCCIÓN :) ."
-    else
-        # En debug, usamos el nivel por defecto 
-        log_info "Ejecutando en modo DEBUG. Logging detallado."
-    fi
-    
+
+	# 2. Lógica del Modo Debug o roducción
+	if [[ "$RUNTIME_MODE" == "production" ]]; then
+		# En producción,se usan menos logs para  reducir la carga y el tamaño de los archivos.
+		# Nivel 1 = WARN. (Nivel por defecto es 2 = INFO)
+		export LOG_LEVEL=1
+		log_warn "Ejecutando en modo PRODUCCIÓN :) ."
+	else
+		# En debug, usamos el nivel por defecto
+		log_info "Ejecutando en modo DEBUG. Logging detallado."
+	fi
+
 	# 3. Iniciar el servidor con la configuración ajustada
 	log_success "Iniciando servidor en $HOST:$PORT (Modo: $RUNTIME_MODE)"
 

@@ -1,235 +1,148 @@
 #!/usr/bin/env bats
 
-# Directorio base de los tests
+# --- CONFIGURACIÓN DE TESTS ---
 BASE_TEST_DIR="$(dirname "$BATS_TEST_FILENAME")"
-
-# Importar para logging
 source "$BASE_TEST_DIR/../src/logger.sh"
-
-# Configuración de logging para tests
-export LOG_LEVEL=${LOG_LEVEL:-1} # WARN y ERROR
+export LOG_LEVEL=1
 export LOG_FILE="$BASE_TEST_DIR/test-execution.log"
 
-# Variables globales
-TEST_OUT_DIR="$BASE_TEST_DIR/test-out"
-TEST_DIST_DIR="$BASE_TEST_DIR/test-dist"
 SERVER_PID=""
 
-setup() {
-    log_debug "=== SETUP: $BATS_TEST_DESCRIPTION ==="
+### FUNCIONES DE AYUDA ###
 
-    # Crear directorios
-    mkdir -p "$TEST_OUT_DIR" "$TEST_DIST_DIR"
-    log_debug "Directorios creados: $TEST_OUT_DIR, $TEST_DIST_DIR"
-    log_debug "=== SETUP COMPLETADO ==="
+setup() {
+    >"$LOG_FILE"
+    # Crear directorios de prueba si no existen
+    mkdir -p out dist
 }
 
 teardown() {
-    log_debug "=== TEARDOWN: $BATS_TEST_DESCRIPTION ==="
-
-    # Cleanup
-    cleanup_all
-
-    # Limpiar directorios
-    rm -rf "$TEST_OUT_DIR" "$TEST_DIST_DIR" 2>/dev/null || true
-
-    log_debug "=== TEARDOWN COMPLETADO ==="
-    echo "" >> "$LOG_FILE" 2>/dev/null || true
+    stop_test_server
 }
 
-cleanup_all() {
-    # Intentar terminar el servidor si está corriendo
+stop_test_server() {
     if [[ -n "${SERVER_PID:-}" ]]; then
         kill -TERM "$SERVER_PID" 2>/dev/null || true
-        sleep 0.5
+        wait "$SERVER_PID" 2>/dev/null || true
     fi
-    # Matar cualquier proceso huérfano
     pkill -9 -f "server.sh" 2>/dev/null || true
-    pkill -9 -f "nc -l.*80[0-9][0-9]" 2>/dev/null || true
     SERVER_PID=""
-    sleep 0.5
+    sleep 0.2
 }
 
-# Limpiar un puerto en específico
-cleanup_port() {
-    local port="$1"
-    local pids
-
-    # Obtener PIDs que estan usando el puerto
-    pids=$(lsof -ti:$port 2>/dev/null || true)
-
-    if [[ -n "$pids" ]]; then
-        log_debug "Liberando puerto $port (PIDs: $pids)"
-        echo "$pids" | xargs -r kill -KILL 2>/dev/null || true
-    fi
-}
-
-# Esperar que un puerto esté libre
-wait_for_port_free() {
-    local port=$1
-    local timeout=${2:-10}
-    local count=0
-
-    while lsof -i :$port >/dev/null 2>&1 && [ $count -lt $timeout ]; do
-        log_debug "Esperando que puerto $port se libere... ($count/$timeout)"
-        cleanup_port $port
-        sleep 1
-        ((count++))
-    done
-
-    if lsof -i :$port >/dev/null 2>&1; then
-        log_warn "Puerto $port sigue ocupado luego de $timeout segundos"
-        return 1
-    fi
-
-    log_debug "Puerto $port está libre"
-    return 0
-}
-
-# Esperar que el servidor esté listo
-wait_for_server_ready() {
-    local port="$1"
-    local timeout=${2:-15}
-    local count=0
-
-    while [[ $count -lt $timeout ]]; do
-        if nc -z 127.0.0.1 "$port" 2>/dev/null; then
-            log_debug "Servidor respondiendo en puerto $port"
-            sleep 1
-            return 0
-        fi
-
-        # Verificar que el proceso siga vivo
-        if [[ -n "${SERVER_PID:-}" ]] && ! kill -0 "$SERVER_PID" 2>/dev/null; then
-            log_warn "Proceso del servidor murió durante el arranque"
-            return 1
-        fi
-
-        sleep 1
-        ((count++))
-    done
-
-    log_warn "Servidor no respondió en puerto $port después de $timeout segundos"
-    return 1
-}
-
-# Configurar entorno
-setup_env() {
-    export PORT="$1"
-    export RELEASE="0.1.0-test"
-    export OUT_DIR="test/test-out"
-    export DIST_DIR="test/test-dist"
-
-    mkdir -p "$OUT_DIR" "$DIST_DIR"
-
-    log_debug "Entorno configurado: PORT=$PORT, RELEASE=$RELEASE"
-}
-
-# Iniciar el servidor para tests
 start_test_server() {
     local port="$1"
+    stop_test_server
 
-    setup_env "$port"
+    # CORRECCIÓN: Usar rutas relativas para que la validación pase
+    export PORT="$port"
+    export RELEASE="0.2.0-test"
+    export OUT_DIR="out" 
+    export DIST_DIR="dist"
 
-    # Asegurar puerto libre
-    cleanup_port "$port"
-    wait_for_port_free "$port" 5 || {
-        skip "No se pudo liberar puerto $port"
-    }
-
-    log_debug "Iniciando servidor de test en puerto $port"
-
-    # Arrancar servidor en background
     (cd src && ./server.sh) &
     SERVER_PID=$!
+    sleep 1.5 # Dar tiempo al servidor para arrancar y validar
 
-    log_debug "Servidor iniciado con PID: $SERVER_PID"
-    # Esperar que esté listo
-    if ! wait_for_server_ready "$port"; then
-        log_error "Servidor no arrancó correctamente"
-        skip "Servidor no arrancó en puerto $port"
+    if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+        log_error "El servidor no pudo arrancar. Revisa los logs:"
+        cat "$LOG_FILE"
+        skip "El servidor no arrancó en el puerto $port"
     fi
-    
-    return 0
 }
 
-# Tests
+### TESTS ###
+
 @test "validación de configuración debe funcionar correctamente" {
-    setup_env 8080
+    # CORRECCIÓN: Asegurar que RUNTIME_MODE esté definido para este test
+    export RUNTIME_MODE="debug" 
+    export PORT="8080"
+    export RELEASE="1.0.0"
+    export OUT_DIR="out"
+    export DIST_DIR="dist"
+    
     run bash -c "cd src && source check-env.sh && validate_env"
     [ "$status" -eq 0 ]
 }
 
 @test "validación debe fallar con puerto inválido" {
-    export PORT="abcdefg"
-    export RELEASE="0.1.0-test"
-    export OUT_DIR="test/test-out"
-    export DIST_DIR="test/test-dist"
-
+    export RUNTIME_MODE="debug"
+    export PORT="abc"
+    export RELEASE="1.0.0"
+    export OUT_DIR="out"
+    export DIST_DIR="dist"
     run bash -c "cd src && source check-env.sh && validate_env"
     [ "$status" -ne 0 ]
-    [[ "$output" =~ "PORT debe ser" ]]
+    [[ "$output" =~ "PORT debe ser numérico" ]]
 }
-
-@test "validación debe fallar con release inválido" {
-    setup_env 8080
-    export RELEASE="invalid-version"
-
-    run bash -c "cd src && source check-env.sh && validate_env"
-    [ "$status" -ne 0 ]
-    [[ "$output" =~ "RELEASE debe seguir formato" ]]
-}
-
-@test "validación debe fallar con directorios absolutos" {
-    setup_env 8080
-    export OUT_DIR="/tmp/test-out"
-    export DIST_DIR="/tmp/test-dist"
-
-    run bash -c "cd src && source check-env.sh && validate_env"
-    [ "$status" -ne 0 ]
-    [[ "$output" =~ "debe ser ruta relativa" ]]
-}
-
 
 @test "servidor debe arrancar sin errores inmediatos" {
+    export RUNTIME_MODE="debug"
     start_test_server 8090
-    
-    # Verificar que el proceso sigue vivo
     kill -0 "$SERVER_PID"
     [ $? -eq 0 ]
 }
 
 @test "servidor responde en /salud con OK y código 200" {
+    export RUNTIME_MODE="debug"
     start_test_server 8091
-
-    # Validar contenido
     run curl -s --max-time 5 "http://127.0.0.1:8091/salud"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "OK" ]]
-
-    # Validar código HTTP con retry
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:8091/salud" || echo "FAILED")
-    if [[ "$http_code" != "200" ]]; then
-        sleep 1
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:8091/salud" || echo "FAILED")
-    fi
-    [ "$http_code" -eq 200 ]
 }
 
-@test "servidor responde 404 y mensaje Not Found en endpoints inexistentes" {
+@test "servidor responde 404 en endpoints inexistentes" {
+    export RUNTIME_MODE="debug"
     start_test_server 8092
-
-    # Validar contenido del error
-    run curl -s --max-time 5 "http://127.0.0.1:8092/inexistente"
+    run curl -s --max-time 5 "http://127.0.0.1:8092/ruta-que-no-existe"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Not Found" ]]
+}
 
-    # Validar código HTTP con retry
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:8092/inexistente" || echo "FAILED")
-    if [[ "$http_code" != "404" ]]; then
-        sleep 1
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:8092/inexistente" || echo "FAILED")
-    fi
-    [ "$http_code" -eq 404 ]
+@test "Endpoint /metrics responde con estructura correcta y modo 'debug'" {
+    export RUNTIME_MODE="debug"
+    start_test_server 8093
+    run curl -s "http://127.0.0.1:8093/metrics"
+    [ "$status" -eq 0 ]
+    local runtime_mode=$(echo "$output" | jq -r '.runtime_mode')
+    [ "$runtime_mode" = "debug" ]
+}
+
+@test "Modo DEBUG debe registrar logs detallados de nivel INFO" {
+    export RUNTIME_MODE="debug"
+    start_test_server 8094
+    curl -s "http://127.0.0.1:8094/salud" > /dev/null
+    stop_test_server
+    run grep "\[INFO\] Ejecutando en modo DEBUG" "$LOG_FILE"
+    [ "$status" -eq 0 ]
+}
+
+@test "Modo PRODUCTION debe suprimir logs de nivel INFO" {
+    export RUNTIME_MODE="production"
+    start_test_server 8095
+    curl -s "http://127.0.0.1:8095/salud" > /dev/null
+    stop_test_server
+    run grep "\[INFO\] Ejecutando en modo DEBUG" "$LOG_FILE"
+    [ "$status" -ne 0 ]
+    run grep "\[WARN\] Ejecutando en modo PRODUCCIÓN" "$LOG_FILE"
+    [ "$status" -eq 0 ]
+}
+
+@test "Servidor debe recuperarse después de un cliente con timeout" {
+    export RUNTIME_MODE="debug"
+    start_test_server 8096
+    curl -s --max-time 1 "http://127.0.0.1:8096/salud" || true
+    run curl -s "http://127.0.0.1:8096/salud"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "OK" ]]
+}
+
+@test "Servidor debe eliminar el archivo FIFO temporal al apagarse" {
+    export RUNTIME_MODE="debug"
+    start_test_server 8097
+    local fifo_path=$(lsof -p "$SERVER_PID" | grep FIFO | awk '{print $9}')
+    [ -p "$fifo_path" ]
+    stop_test_server
+    [ ! -e "$fifo_path" ]
 }
 

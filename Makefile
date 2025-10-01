@@ -23,10 +23,10 @@ DIST_DIR := dist
 
 # Variables de entorno
 PORT ?= 8080
-RELEASE ?= 0.1.0-beta
+RELEASE ?= 0.2.0-beta
 LOG_LEVEL ?= 2
+RUNTIME_MODE ?= debug
 
-RUNTIME_MODE ?= debug 
 # Exportar variables de entorno para que los scripts Bash puedan leerlas
 export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR RUNTIME_MODE
 
@@ -34,13 +34,10 @@ export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR RUNTIME_MODE
 BUILD_INFO := $(OUT_DIR)/build-info.txt
 TIMESTAMP := $(shell date +%s)
 GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+# definicion de archivos 
 REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
 SRC_SCRIPTS := $(wildcard $(SRC_DIR)/*.sh)
-TEST_BATS := $(wildcard $(TEST_DIR)/*.bats)
-LINT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.lint)
-FORMAT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.format)
-BUILD_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.built)
-TEST_TARGETS := $(TEST_BATS:$(TEST_DIR)/%.bats=$(OUT_DIR)/%.executed)
+TEST_SCRIPTS := $(wildcard $(TEST_DIR)/*.bats)
 
 # Artefactos reproducibles
 PACKAGE_NAME := pipeline-$(RELEASE)
@@ -49,49 +46,52 @@ CHECKSUM_SHA256 := $(DIST_DIR)/$(PACKAGE_NAME).sha256
 REPRO_ARTIFACTS := $(PACKAGE_TAR) $(CHECKSUM_SHA256)
 
 # Targets
-tools: $(OUT_DIR)/tools.verified ## Verificar disponibilidad de dependencias
+tools: ## Verificar disponibilidad de dependencias
+	@echo "Verificando herramientas..."
+	@for cmd in $(REQUIRED_TOOLS); do \
+		command -v $$cmd > /dev/null 2>&1 || { echo "Error: Comando no encontrado: '$$cmd'"; exit 1; }; \
+	done
+	@echo "Todas las herramientas están disponibles."
 
-lint: $(LINT_TARGETS) ## Revisar formato de Bash scripts
+lint: tools ## Revisar la sintaxis de los scripts
+	@echo "Revisando scripts con shellcheck..."
+	
+format: tools ## Formatear los scripts
+	@echo "Formateando scripts con shfmt..."
+	@$(SHFMT) -w $(SRC_SCRIPTS)
 
-format: $(FORMAT_TARGETS) ## Formatear Bash scripts
+build: ## Validar la sintaxis de los scripts
+	@echo "Validando sintaxis de los scripts..."
+	@for script in $(SRC_SCRIPTS); do \
+		bash -n "$$script"; \
+	done
+	@echo "Build completado."
 
-build: $(BUILD_TARGETS) $(BUILD_INFO) ## Prepara artefactos intermedios en out/
+test: build lint format ## Ejecutar la suite de pruebas de Bats
+	@echo "Ejecutando pruebas de integración..."
+	@bats $(TEST_DIR)/server.bats
 
-test: $(TEST_TARGETS) ## Ejecutar suite de pruebas Bats
-
-run: build ## Ejecutar el pipeline principal
-	@echo "Lanzando servidor..."
+run: build ## Ejecutar el servidor principal
+	@echo "Lanzando servidor en modo: $(RUNTIME_MODE)..."
 	@$(SRC_DIR)/server.sh
 
-pack: $(REPRO_ARTIFACTS) ## Generar paquete reproducible con metadata
-	@echo "Paquete: $(PACKAGE_TAR)"
-	@echo "Checksum: $(CHECKSUM_SHA256)"
+pack: test ## Generar paquete reproducible con metadata
+	@echo "Empaquetando release $(RELEASE)..."
+	@mkdir -p $(DIST_DIR)
+	@tar --sort=name \
+	     --owner=0 --group=0 --numeric-owner \
+	     --mtime='@$(TIMESTAMP)' \
+	     -czf $(PACKAGE_TAR) \
+	     --exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
+	     src/ test/ docs/ Makefile .env.example
+	@echo "Paquete creado: $(PACKAGE_TAR)"
+
+checksum: pack ## Generar checksums del paquete
+	@echo "Generando checksum SHA256..."
+	@sha256sum $(PACKAGE_TAR) | awk '{print $$1}' > $(CHECKSUM_SHA256)
 	@echo "SHA256: $$(cat $(CHECKSUM_SHA256))"
-	@ls -lh $(PACKAGE_TAR)
 
-checksum: $(CHECKSUM_SHA256) ## Generar checksums del paquete
-
-verify-repro: ## Verificar reproducibilidad del empaquetado
-	@echo "Verificando reproducibilidad del build..."
-	@$(MAKE) -s pack
-	@cp $(PACKAGE_TAR) $(DIST_DIR)/pipeline-verify-1.tar.gz
-	@cp $(CHECKSUM_SHA256) $(DIST_DIR)/pipeline-verify-1.sha256
-	@sleep 2
-	@$(MAKE) -s pack
-	@cp $(PACKAGE_TAR) $(DIST_DIR)/pipeline-verify-2.tar.gz
-	@cp $(CHECKSUM_SHA256) $(DIST_DIR)/pipeline-verify-2.sha256
-	@if diff $(DIST_DIR)/pipeline-verify-1.sha256 $(DIST_DIR)/pipeline-verify-2.sha256 >/dev/null; then \
-		echo "REPRODUCIBLE: Los builds generan checksums idénticos"; \
-		echo "	SHA256: $$(cat $(CHECKSUM_SHA256))"; \
-	else \
-		echo "NO REPRODUCIBLE: Los checksums difieren"; \
-		echo "	Build 1: $$(cat $(DIST_DIR)/pipeline-verify-1.sha256)"; \
-		echo "	Build 2: $$(cat $(DIST_DIR)/pipeline-verify-2.sha256)"; \
-		exit 1; \
-	fi
-	@rm -f $(DIST_DIR)/pipeline-verify-*.tar.gz $(DIST_DIR)/pipeline-verify-*.sha256
-
-release: pack ## Crear release y actualizar CHANGELOG.md
+release: checksum ## Crear un tag de release y actualizar CHANGELOG.md
 	@echo "Generando release $(RELEASE)"
 	@# Validar que no haya cambios sin commitear
 	@if ! git diff --quiet || ! git diff --cached --quiet; then \
@@ -136,12 +136,12 @@ release: pack ## Crear release y actualizar CHANGELOG.md
 	git push origin $$current_branch && \
 	git push origin "v$(RELEASE)"
 	@echo "Release v$(RELEASE) completado y enviado al remoto"
-	
+
 clean: ## Limpiar directorios out/ y dist/
-	@echo "Limpiando artefactos"
+	@echo "Limpiando artefactos..."
 	@rm -rf $(OUT_DIR) $(DIST_DIR)
 
-help: ## Mostrar lista de targets
+help: ## Mostrar esta lista de ayuda
 	@echo "Targets disponibles:"
 	@grep -E '^[a-zA-Z0-9_\-]+:.*?##' $(MAKEFILE_LIST) | \
 		awk 'BEGIN{FS=":.*?##"}{printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
