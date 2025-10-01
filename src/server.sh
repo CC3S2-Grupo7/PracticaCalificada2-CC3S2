@@ -32,7 +32,7 @@ cleanup() {
 
 	log_success "Servidor detenido correctamente"
 
-	exit $exit_code 
+	exit $exit_code
 
 }
 trap cleanup SIGINT SIGTERM EXIT
