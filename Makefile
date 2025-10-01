@@ -199,11 +199,6 @@ $(FORMAT_STAMP): $(SRC_SCRIPTS) | $(TIMESTAMP_DIR)
 # Build: validar y generar metadata
 $(BUILD_STAMP): $(SRC_SCRIPTS) $(LINT_STAMP) | $(TIMESTAMP_DIR) $(OUT_DIR)
 	@echo "Ejecutando build"
-	@# Validar sintaxis de cada script
-	@for script in $(SRC_SCRIPTS); do \
-		echo "  Validando sintaxis de $$script"; \
-		$(SHELL) -n "$$script"; \
-	done
 	@# Generar build-info.txt
 	@echo "Generando información de build"
 	@echo "release=$(RELEASE)" > $(BUILD_INFO)
