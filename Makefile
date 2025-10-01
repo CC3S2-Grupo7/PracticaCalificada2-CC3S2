@@ -55,12 +55,7 @@ run: build ## Ejecutar el pipeline principal
 	@echo "Lanzando servidor..."
 	@$(SRC_DIR)/server.sh
 
-pack: build test ## Generar paquete reproducible en dist/
-	@mkdir -p $(DIST_DIR)
-	@tar -czf $(DIST_DIR)/pipeline-$(RELEASE).tar.gz \
-		--exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
-		src/ test/ docs/ Makefile .env.example
-	@echo "Paquete creado: $(DIST_DIR)/pipeline-$(RELEASE).tar.gz"
+pack: $(DIST_DIR)/pipeline-$(RELEASE).tar.gz ## Generar paquete reproducible en dist/
 	
 clean: ## Limpiar directorios out/ y dist/
 	@echo "Limpiando artefactos"
@@ -116,3 +111,11 @@ $(OUT_DIR)/%.executed: $(TEST_DIR)/%.bats $(BUILD_INFO)
 	@bats "$<"
 	@mkdir -p $(@D)
 	@touch $@
+
+$(DIST_DIR)/pipeline-$(RELEASE).tar.gz: $(BUILD_INFO) $(TEST_TARGETS)
+	@echo "Empaquetando release $(RELEASE)"
+	@mkdir -p $(@D)
+	@tar -czf $@ \
+		--exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
+		src/ test/ docs/ Makefile .env.example
+	@echo "Paquete creado: $@"
