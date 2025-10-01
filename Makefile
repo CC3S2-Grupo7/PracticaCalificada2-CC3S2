@@ -34,9 +34,11 @@ BUILD_INFO := $(OUT_DIR)/build-info.txt
 TIMESTAMP := $(shell date +%s)
 REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
 SRC_SCRIPTS := $(wildcard $(SRC_DIR)/*.sh)
+TEST_BATS := $(wildcard $(TEST_DIR)/*.bats)
 LINT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.lint)
 FORMAT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.format)
 BUILD_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.built)
+TEST_TARGETS := $(TEST_BATS:$(TEST_DIR)/%.bats=$(OUT_DIR)/%.executed)
 
 # Targets
 tools: $(OUT_DIR)/tools.verified ## Verificar disponibilidad de dependencias
@@ -47,9 +49,7 @@ format: $(FORMAT_TARGETS) ## Formatear Bash scripts
 
 build: $(BUILD_TARGETS) $(BUILD_INFO) ## Prepara artefactos intermedios en out/
 
-test: build ## Ejecutar suite de pruebas Bats
-	@bats $(TEST_DIR)/server.bats
-	@bats $(TEST_DIR)/run_integration.bats
+test: $(TEST_TARGETS) ## Ejecutar suite de pruebas Bats
 
 run: build ## Ejecutar el pipeline principal
 	@echo "Lanzando servidor..."
@@ -110,3 +110,9 @@ $(BUILD_INFO): $(BUILD_TARGETS)
 	@echo "Release: $(RELEASE)" > $@
 	@echo "Timestamp: $(TIMESTAMP)" >> $@
 	@echo "Build completado"
+
+$(OUT_DIR)/%.executed: $(TEST_DIR)/%.bats $(BUILD_INFO)
+	@echo "Ejecutando test Bats $<"
+	@bats "$<"
+	@mkdir -p $(@D)
+	@touch $@
