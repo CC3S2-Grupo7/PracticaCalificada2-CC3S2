@@ -35,7 +35,7 @@ export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
 
 # Otras variables
 BUILD_INFO := $(OUT_DIR)/build-info.txt
-TIMESTAMP := $(shell date +%s)
+BUILD_DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
 SRC_SCRIPTS := $(wildcard $(SRC_DIR)/*.sh)
@@ -202,11 +202,11 @@ $(BUILD_STAMP): $(SRC_SCRIPTS) $(LINT_STAMP) | $(TIMESTAMP_DIR) $(OUT_DIR)
 	@# Generar build-info.txt
 	@echo "Generando información de build"
 	@echo "release=$(RELEASE)" > $(BUILD_INFO)
-	@echo "build_date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(BUILD_INFO)
+	@echo "build_date=$(BUILD_DATE)" >> $(BUILD_INFO)
 	@echo "git_commit=$(GIT_HASH)" >> $(BUILD_INFO)
 	@# Generar release-info.txt
 	@echo "release=$(RELEASE)" > $(OUT_DIR)/release-info.txt
-	@echo "build_date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(OUT_DIR)/release-info.txt
+	@echo "build_date=$(BUILD_DATE)" >> $(OUT_DIR)/release-info.txt
 	@echo "git_commit=$(GIT_HASH)" >> $(OUT_DIR)/release-info.txt
 	@echo "Build completado"
 	@touch $@
@@ -229,11 +229,10 @@ endif
 	@echo "Empaquetando release $(RELEASE) de forma reproducible"
 	@tar --sort=name \
 	     --owner=0 --group=0 --numeric-owner \
-	     --mtime='@$(TIMESTAMP)' \
 	     -czf $@ \
-	     --exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' --exclude='$(TIMESTAMP_DIR)' \
+	     --exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' --exclude='$(TIMESTAMP_DIR)' --exclude='$(TEST_DIR)'\
 	     --exclude='.git' --exclude='.gitignore' \
-	     src/ test/ docs/ Makefile .env.example README.md
+	     src/ docs/ Makefile .env.example README.md
 	@echo "Paquete creado: $@"
 
 # Checksum: generar SHA256
