@@ -1,3 +1,17 @@
+## [0.4.0-beta] - 2025-10-01
+- fe1d531 Merge branch 'vargas-release' into release, prueba 3
+- 472d515 Agregar parte de 'Implementacion de cache incremental' en bitacora del sprint 3
+- ab359e6 Cambiar TIMESTAMP por BUILD_DATE, y quitar test/ del empaquetado
+- 8fbfe2f Corregir PACKAGE_TAR, agregar dependencia con TEST_STAMP
+- 36b497d Agregar tests para Makefile
+- fadbb42 Eliminar validacion innecesaria
+- c18e398 Agregar variable PACK_SKIP_TEST para manejar los tests de makefile
+- e9a3cc3 Borrar run_integration.bats de la carpeta test
+- e471720 Agregar reglas de creación de timestamps
+- 7979b3c Refactorizar targets principales para usar timestamps en caché incremental
+- 80e0471 Agregar .make a la lista en .gitignore
+- d4126cd Agregar directorio .make y archivos de timestamps para caché incremental
+
 ## [0.3.0-beta] - 2025-10-01
 - d9a7687 Merge branch 'vargas-release' into release, prueba antes del PR
 - 1c407fb Agregar parte de 'Testing y configuracion del release' a la bitacora del sprint 2
