@@ -3,6 +3,19 @@
 ## Descripción
 Pipeline Make que implementa una separación clara entre las etapas de build, release y run, produciendo artefactos reproducibles con versionado semántico.
 
+## Estructura del Proyecto
+
+```
+PracticaCalificada2-CC3S2/
+├── src/               # Scripts Bash del servidor
+├── test/              # Casos de prueba Bats
+├── docs/              # Documentación y bitácoras
+├── out/               # Artefactos intermedios
+├── dist/              # Paquetes finales
+├── .env.example       # Plantilla de variables de entorno
+├── Makefile           # Pipeline de automatización
+```
+
 ## Configuración
 
 ### Variables de Entorno
@@ -16,22 +29,61 @@ Pipeline Make que implementa una separación clara entre las etapas de build, re
 | `DIST_DIR`   | Directorio de paquetes finales       | `ls $DIST_DIR/` muestra los paquetes    | dist              |
 | `LOG_LEVEL`  | Verbosidad de logs                   | Filtra los logs por nivel de severidad  | info              |
 
-### Uso Básico
+### Instrucciones de uso
 
 ```bash
 # Copiar valores de ejemplo 
 cp .env.example .env
+
+# Verificar dependencias
+make tools
+
+# Ejecutar el servidor (desarrollo)
+make run
 ```
 
-## Estructura del Proyecto
+### Pipeline de Desarrollo
 
+```bash
+# 1. Validar código (lint + formato)
+make lint format
+
+# 2. Ejecutar tests
+make test
+
+# 3. Build completo
+make build
+
+# 4. Empaquetar release
+make pack
+
+# 5. Verificar reproducibilidad
+make verify-repro
 ```
-pc2/
-├── src/               # Scripts Bash del servidor
-├── test/              # Casos de prueba Bats
-├── docs/              # Documentación y bitácoras
-├── out/               # Artefactos intermedios
-├── dist/              # Paquetes finales
-├── .env.example       # Plantilla de variables de entorno
-├── Makefile           # Pipeline de automatización
+
+## Endpoints Disponibles
+
+### `/salud` - Health Check
+Retorna el estado de salud del servidor.
+
+```bash
+curl http://127.0.0.1:8080/salud
 ```
+
+**Respuesta:**
+```json
+{
+    "status": "OK",
+    "timestamp": "2025-10-01T03:50:37Z",
+    "uptime_seconds": 36,
+}
+```
+
+## Principios de Diseño
+
+- **12-Factor App**: Configuración desde entorno
+- **Bash Robusto**: `set -euo pipefail`
+- **Tests AAA/RGR**: Estructura clara de tests
+- **Reproducibilidad**: Builds determinísticos
+- **Trazabilidad**: Logging estructurado
+- **Versionado Semántico**: Control de versiones claro
