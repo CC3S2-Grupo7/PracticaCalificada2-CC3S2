@@ -7,3 +7,6 @@ dist/
 
 # Archivos de log
 *.log
+
+# Carpeta .make
+.make/
