@@ -140,77 +140,101 @@ release: pack ## Crear release y actualizar CHANGELOG.md
 	git push origin "v$(RELEASE)"
 	@echo "Release v$(RELEASE) completado y enviado al remoto"
 	
-clean: ## Limpiar directorios out/ y dist/
-	@echo "Limpiando artefactos"
-	@rm -rf $(OUT_DIR) $(DIST_DIR)
+clean: ## Limpiar directorios out/, dist/ y caché
+	@echo "Limpiando artefactos y caché"
+	@rm -rf $(OUT_DIR) $(DIST_DIR) $(TIMESTAMP_DIR)
 
 help: ## Mostrar lista de targets
 	@echo "Targets disponibles:"
 	@grep -E '^[a-zA-Z0-9_\-]+:.*?##' $(MAKEFILE_LIST) | \
 		awk 'BEGIN{FS=":.*?##"}{printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
-# Reglas patrón
-$(OUT_DIR)/tools.verified:
+# Reglas con caché incremental
+
+# Crear directorio de timestamps
+$(TIMESTAMP_DIR):
+	@mkdir -p $@
+
+$(OUT_DIR):
+	@mkdir -p $@
+
+$(DIST_DIR):
+	@mkdir -p $@
+
+# Tools: verificar herramientas una sola vez
+$(TOOLS_STAMP): | $(TIMESTAMP_DIR)
 	@echo "Verificando herramientas"
 	@for cmd in $(REQUIRED_TOOLS); do \
 		command -v $$cmd > /dev/null 2>&1 || { echo "Comando no encontrado: $$cmd"; exit 1; }; \
 	done
-	@mkdir -p $(@D)
+	@echo "Todas las herramientas están disponibles"
 	@touch $@
 
-$(OUT_DIR)/%.lint: $(SRC_DIR)/%.sh | $(OUT_DIR)/tools.verified
-	@echo "Revisando $<"
-	@$(SHELLCHECK) -e SC1091 "$<"
-	@mkdir -p $(@D)
+# Lint: validar sintaxis con shellcheck
+$(LINT_STAMP): $(SRC_SCRIPTS) $(TOOLS_STAMP) | $(TIMESTAMP_DIR)
+	@echo "Validando sintaxis con shellcheck"
+	@for script in $(SRC_SCRIPTS); do \
+		echo "  Validando $$script"; \
+		$(SHELLCHECK) -e SC1091 "$$script"; \
+	done
+	@echo "Validación de sintaxis completada"
 	@touch $@
 
-$(OUT_DIR)/%.format: $(SRC_DIR)/%.sh | $(OUT_DIR)/tools.verified
-	@echo "Formateando $<"
-	@$(SHFMT) -w "$<"
-	@mkdir -p $(@D)
+# Formatear scripts con shfmt
+
+$(FORMAT_STAMP): $(SRC_SCRIPTS) | $(TIMESTAMP_DIR)
+	@echo "Formateando scripts con shfmt"
+	@for script in $(SRC_SCRIPTS); do \
+		echo "  Formateando $$script"; \
+		$(SHFMT) -w "$$script"; \
+	done
+	@echo "Formateo completado"
 	@touch $@
 
-$(OUT_DIR)/%.built: $(SRC_DIR)/%.sh
-	@echo "Validando sintaxis de $<"
-	@$(SHELL) -n "$<"
-	@mkdir -p $(@D)
-	@touch $@
 
-$(BUILD_INFO): $(BUILD_TARGETS)
+# Build: validar y generar metadata
+$(BUILD_STAMP): $(SRC_SCRIPTS) $(LINT_STAMP) | $(TIMESTAMP_DIR) $(OUT_DIR)
+	@echo "Ejecutando build"
+	@# Validar sintaxis de cada script
+	@for script in $(SRC_SCRIPTS); do \
+		echo "  Validando sintaxis de $$script"; \
+		$(SHELL) -n "$$script"; \
+	done
+	@# Generar build-info.txt
 	@echo "Generando información de build"
-	@mkdir -p $(@D)
-	@echo "Release: $(RELEASE)" > $@
-	@echo "Timestamp: $(TIMESTAMP)" >> $@
-	@echo "Git Hash: $(GIT_HASH)" >> $@
-	@echo "Scripts procesados: $(words $(SRC_SCRIPTS))" >> $@
-	@echo "Tests disponibles: $(words $(TEST_BATS))" >> $@
-	@echo "Artifacts:" >> $@
-	@echo "	build_info: $(BUILD_INFO)" >> $@
-	@echo "	package: $(PACKAGE_TAR)" >> $@
+	@echo "release=$(RELEASE)" > $(BUILD_INFO)
+	@echo "build_date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(BUILD_INFO)
+	@echo "git_commit=$(GIT_HASH)" >> $(BUILD_INFO)
+	@# Generar release-info.txt
+	@echo "release=$(RELEASE)" > $(OUT_DIR)/release-info.txt
+	@echo "build_date=$$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(OUT_DIR)/release-info.txt
+	@echo "git_commit=$(GIT_HASH)" >> $(OUT_DIR)/release-info.txt
 	@echo "Build completado"
-
-$(OUT_DIR)/%.executed: $(TEST_DIR)/%.bats $(BUILD_INFO)
-	@echo "Ejecutando test Bats $<"
-	@bats "$<"
-	@mkdir -p $(@D)
 	@touch $@
 
-$(PACKAGE_TAR): $(BUILD_INFO) $(TEST_TARGETS)
+# Test: ejecutar suite Bats
+$(TEST_STAMP): $(BUILD_STAMP) $(TEST_BATS) | $(TIMESTAMP_DIR)
+	@echo "Ejecutando suite de tests"
+	@for test in $(TEST_BATS); do \
+		echo "  Ejecutando $$test"; \
+		bats "$$test"; \
+	done
+	@echo "Tests completados"
+	@touch $@
+
+# Pack: crear tarball reproducible
+$(PACKAGE_TAR): $(TEST_STAMP) | $(DIST_DIR)
 	@echo "Empaquetando release $(RELEASE) de forma reproducible"
-	@mkdir -p $(@D)
-	@# Crear archivo de metadata
-	@echo "release: $(RELEASE)" > $(OUT_DIR)/release-info.txt
-	@echo "build_date: $$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(OUT_DIR)/release-info.txt
-	@echo "git_commit: $(GIT_HASH)" >> $(OUT_DIR)/release-info.txt
-	@# Crear tarball reproducible
 	@tar --sort=name \
 	     --owner=0 --group=0 --numeric-owner \
 	     --mtime='@$(TIMESTAMP)' \
 	     -czf $@ \
-	     --exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
-	     src/ test/ docs/ Makefile .env.example
+	     --exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' --exclude='$(TIMESTAMP_DIR)' \
+	     --exclude='.git' --exclude='.gitignore' \
+	     src/ test/ docs/ Makefile .env.example README.md
 	@echo "Paquete creado: $@"
 
+# Checksum: generar SHA256
 $(CHECKSUM_SHA256): $(PACKAGE_TAR)
 	@echo "Generando checksum SHA256"
 	@sha256sum $< | awk '{print $$1}' > $@
