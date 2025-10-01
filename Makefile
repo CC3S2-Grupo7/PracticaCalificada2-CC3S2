@@ -1,7 +1,7 @@
 # Configuración inicial
 SHELL := /bin/bash
 SHELLCHECK := shellcheck
-SHFMT := shfmtsudo apt install shfmt 
+SHFMT := shfmt
 
 MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 
@@ -30,21 +30,16 @@ LOG_LEVEL ?= 2
 export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
 
 REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
+SRC_SCRIPTS := $(wildcard $(SRC_DIR)/*.sh)
+LINT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.lint)
+FORMAT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.format)
 
 # Targets
 tools: $(OUT_DIR)/tools.verified ## Verificar disponibilidad de dependencias
 
-lint: ## Revisar formato de Bash scripts
-	@find $(SRC_DIR) -name "*.sh" -type f | while read -r file; do \
-		echo "Revisando $$file"; \
-		$(SHELLCHECK) -e SC1091 "$$file" || exit 1; \
-	done
+lint: $(LINT_TARGETS) ## Revisar formato de Bash scripts
 
-format: ## Formatear Bash scripts
-	@find $(SRC_DIR) -name "*.sh" -type f | while read -r file; do \
-		echo "Formateando $$file"; \
-		$(SHFMT) -w "$$file" || exit 1; \
-	done
+format: $(FORMAT_TARGETS) ## Formatear Bash scripts
 
 build: tools ## Prepara artefactos intermedios en out/
 	@mkdir -p $(OUT_DIR)
@@ -83,5 +78,23 @@ $(OUT_DIR)/tools.verified:
 	@for cmd in $(REQUIRED_TOOLS); do \
 		command -v $$cmd > /dev/null 2>&1 || { echo "Comando no encontrado: $$cmd"; exit 1; }; \
 	done
+	@mkdir -p $(@D)
+	@touch $@
+
+$(OUT_DIR)/%.lint: $(SRC_DIR)/%.sh | $(OUT_DIR)/tools.verified
+	@echo "Revisando $<"
+	@$(SHELLCHECK) -e SC1091 "$<"
+	@mkdir -p $(@D)
+	@touch $@
+
+$(OUT_DIR)/%.lint: $(SRC_DIR)/%.sh | $(OUT_DIR)/tools.verified
+	@echo "Revisando $<"
+	@$(SHELLCHECK) -e SC1091 "$<"
+	@mkdir -p $(@D)
+	@touch $@
+
+$(OUT_DIR)/%.format: $(SRC_DIR)/%.sh | $(OUT_DIR)/tools.verified
+	@echo "Formateando $<"
+	@$(SHFMT) -w "$<"
 	@mkdir -p $(@D)
 	@touch $@
