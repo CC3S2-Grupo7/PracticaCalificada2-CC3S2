@@ -1,0 +1,8 @@
+Release: 0.2.0-beta
+Timestamp: 1759283175
+Git Hash: 7844989
+Scripts procesados: 3
+Tests disponibles: 2
+Artifacts:
+	build_info: out/build-info.txt
+	package: dist/pipeline-0.2.0-beta.tar.gz
