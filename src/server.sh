@@ -100,7 +100,7 @@ process_request() {
 	done
 
 	local method path protocol
-    # shellcheck disable=SC2034
+	# shellcheck disable=SC2034
 	read -r method path protocol <<<"$request_line"
 
 	echo "Procesando request: $method $path" >&2
