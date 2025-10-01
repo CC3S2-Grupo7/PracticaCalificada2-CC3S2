@@ -1,17 +1,68 @@
-# Changelog
+## [0.1.0-beta] - 2025-10-01
+- 58ad1e4 Initial commit
+- f641655 Agregar primeras lineas de .gitignore, carpetas out/ y dist/
+- 7b74d75 Agregar .env.example
+- bd973a8 Agregar tabla de variables de entorno al README
+- f5e5764 Agregar CHANGELOG.md
+- 2359b39 Agregar check-env.sh y script de utilidad logger.sh
+- e3e027d Agregar estructura inicial del Makefile
+- 0b2291b Añadir configuración inicial de robustez en Makefile
+- 486d0d6 Implementar herramientas de lint y formateo para scripts .sh
+- 3860a10 Implementar un servidor básico con endpoint /salud
+- 1d00643 Agregar trap para limpieza de procesos
+- 9a73be0 Generalizar comando para la conexión del servidor
+- 6683412 Añadir bitácora parcial de sprint 1
+- 462c9bd Modificar respuesta JSON para validez
+- 675c801 Merge pull request #1 from CC3S2-Grupo7/bayes-build
+- d4ad81e Agregar reportes de advertencias en check-env
+- ed5a6da Agregar uso de variable de entorno LOG_FILE para redirigir los logs
+- 0d68f9a Agregar version incompleta de server.sh
+- 30dbd1c Agregar server.bats con test en rojo
+- 935e42f Reemplazar server.sh minimo por uno funcional
+- 9094359 Agregar test de validacion de variables de entorno
+- fa2d836 Modificar funcion cleanup, mata todos los procesos hijos y asegura limpieza con EXIT
+- f635e3a Agregar funciones de logging y un tiempo entre conexiones, dentro de start_server
+- ee4ca2f Exportar variable LOG_FILE para leer los logs luego de cada test
+- 24fe4cf Agregar funciones helper para el manejo de puertos y estado del servidor
+- ffc61fb Mejorar cleanup de recursos en los tests
+- 7515312 Mejorar inicio del servidor para los tests
+- 61bdea9 Reemplazo de start_server por start_test_server
+- 1539611 Agregar *.log a .gitignore, para no trackear los logs de cada ejecucion
+- 78927de Añadir bitácora parcial de sprint 1
+- 81bdacd Implementar herramientas de lint y formateo para scripts .sh
+- d7df802 Formatear segun el target format del Makefile
+- 55a4c92 Corregir variables de entorno e implementar los targets build, test y pack
+- 2a0c147 Agregar anotacion para evitar inconvenientes en los test
+- 0d1f122 Agregar parte sobre la rama release a la bitacora
+- ac15418 Merge branch 'develop' into vargas-release
+- 9c56fd2 Merge pull request #2 from CC3S2-Grupo7/vargas-release
+- 5185d4c implementar make run y cambiar varialbe LOG_LEVEL
+- 6007134 validacion de runtime
+- aa1b381 Manejar las señales
+- af9a4ed Estructurar el logging del servidor
+- b78839d Creacion de el test run_integration
+- cdcbd54 Implementar el nuevo test
+- 3fdee00 Validacion de codigos de respuesta http
+- bac1232 Limpiar y configurar el trap
+- 2b40194 Implementar target run y validaciones
+- 66fe56b Merge branch develop from inga-run
+- 468a37b Mejorar suit de tests, agregar test especificos para las variables de entorno
+- 1bf0d34 Merge branch 'vargas-release' of github.com:CC3S2-Grupo7/PracticaCalificada2-CC3S2 into vargas-release
+- 22fcfb0 Mejorar test para el endpoint salud/, agregar verificacion de codigo 200
+- a9740c3 Agregar test para endpoints inexistentes
+- 4073479 Formateo de anotacion para shellcheck
+- 44be482 Añadir regla patrón para target tools
+- 8a9614e Añadir regla patrón para targets lint y format
+- 2aa12d5 Agregar sistema de timestamps para evitar rebuilds
+- 4245c67 Añadir regla patrón para target test
+- 0ac6324 Añadir regla patrón para target pack
+- f089a45 Implementar artefactos reproducibles y target para verificar la reproducibilidad
+- 7844989 Expandir la información del build
+- abe2df4 Agregar guia para las releases
+- 8663287 Agregar avance de la bitacora para el sprint 2
+- 9d9deb8 Modificar target pack para guardar metadata y generar checksum para el artefacto
+- 1cdde69 Merge branch 'bayes-build' into vargas-release
+- 397b09c Modificacion de target pack utilizando reglas patron
+- 9067140 Agregar target release a archivo Makefile
+- 8639a0e Borrar contenido antiguo de CHANGELOG
 
-## [Unreleased]
-
-### Agregado
-- N/A
-
-### Cambiado
-- N/A
-
-### Corregido
-- N/A
-
-## [0.1.0-alpha] - 2025-09-XX
-
-### Agregado
-- Variables de entorno documentadas
