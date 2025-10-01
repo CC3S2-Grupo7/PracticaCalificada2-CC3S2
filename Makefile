@@ -222,12 +222,9 @@ $(TEST_STAMP): $(BUILD_STAMP) $(TEST_BATS) | $(TIMESTAMP_DIR)
 	@touch $@
 
 # Pack: crear tarball reproducible
-$(PACKAGE_TAR): $(DIST_DIR)
+$(PACKAGE_TAR): $(TEST_STAMP) | $(DIST_DIR)
 ifeq ($(PACK_SKIP_TEST),1)
 	@echo "Saltando tests en pack"
-else
-	@# Asegurarse de que los tests pasen antes de empaquetar
-	$(TEST_STAMP)
 endif
 	@echo "Empaquetando release $(RELEASE) de forma reproducible"
 	@tar --sort=name \
