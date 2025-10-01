@@ -13,7 +13,7 @@ export LC_ALL := C
 export LANG := C
 export TZ := UTC
 
-.PHONY: build clean format help lint pack run test tools
+.PHONY: build clean format help lint pack run test tools checksum verify-repro
 
 # Directorios
 SRC_DIR := src
@@ -23,13 +23,13 @@ DIST_DIR := dist
 
 # Variables de entorno
 PORT ?= 8080
-RELEASE ?= 0.2.0-beta
+RELEASE ?= 0.1.0-beta
 LOG_LEVEL ?= 2
 
 # Exportar variables de entorno para que los scripts Bash puedan leerlas
 export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
 
-# Otra variables
+# Otras variables
 BUILD_INFO := $(OUT_DIR)/build-info.txt
 TIMESTAMP := $(shell date +%s)
 GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -62,7 +62,11 @@ run: build ## Ejecutar el pipeline principal
 	@echo "Lanzando servidor..."
 	@$(SRC_DIR)/server.sh
 
-pack: $(REPRO_ARTIFACTS) ## Generar paquete reproducible en dist/ con checksums
+pack: $(REPRO_ARTIFACTS) ## Generar paquete reproducible con metadata
+	@echo "Paquete: $(PACKAGE_TAR)"
+	@echo "Checksum: $(CHECKSUM_SHA256)"
+	@echo "SHA256: $(cat $(CHECKSUM_SHA256))"
+	@ls -lh $(PACKAGE_TAR)
 
 checksum: $(CHECKSUM_SHA256) ## Generar checksums del paquete
 
@@ -71,7 +75,7 @@ verify-repro: ## Verificar reproducibilidad del empaquetado
 	@$(MAKE) -s pack
 	@cp $(PACKAGE_TAR) $(DIST_DIR)/pipeline-verify-1.tar.gz
 	@cp $(CHECKSUM_SHA256) $(DIST_DIR)/pipeline-verify-1.sha256
-	@sleep 2 
+	@sleep 2
 	@$(MAKE) -s pack
 	@cp $(PACKAGE_TAR) $(DIST_DIR)/pipeline-verify-2.tar.gz
 	@cp $(CHECKSUM_SHA256) $(DIST_DIR)/pipeline-verify-2.sha256
@@ -85,7 +89,7 @@ verify-repro: ## Verificar reproducibilidad del empaquetado
 		exit 1; \
 	fi
 	@rm -f $(DIST_DIR)/pipeline-verify-*.tar.gz $(DIST_DIR)/pipeline-verify-*.sha256
-	
+
 clean: ## Limpiar directorios out/ y dist/
 	@echo "Limpiando artefactos"
 	@rm -rf $(OUT_DIR) $(DIST_DIR)
@@ -144,6 +148,11 @@ $(OUT_DIR)/%.executed: $(TEST_DIR)/%.bats $(BUILD_INFO)
 $(PACKAGE_TAR): $(BUILD_INFO) $(TEST_TARGETS)
 	@echo "Empaquetando release $(RELEASE) de forma reproducible"
 	@mkdir -p $(@D)
+	@# Crear archivo de metadata
+	@echo "release: $(RELEASE)" > $(OUT_DIR)/release-info.txt
+	@echo "build_date: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(OUT_DIR)/release-info.txt
+	@echo "git_commit: $(GIT_HASH)" >> $(OUT_DIR)/release-info.txt
+	@# Crear tarball reproducible
 	@tar --sort=name \
 	     --owner=0 --group=0 --numeric-owner \
 	     --mtime='@$(TIMESTAMP)' \
