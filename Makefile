@@ -20,6 +20,7 @@ SRC_DIR := src
 TEST_DIR := test
 OUT_DIR := out
 DIST_DIR := dist
+TIMESTAMP_DIR := .make
 
 # Variables de entorno
 PORT ?= 8080
@@ -36,10 +37,13 @@ GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
 SRC_SCRIPTS := $(wildcard $(SRC_DIR)/*.sh)
 TEST_BATS := $(wildcard $(TEST_DIR)/*.bats)
-LINT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.lint)
-FORMAT_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.format)
-BUILD_TARGETS := $(SRC_SCRIPTS:$(SRC_DIR)/%.sh=$(OUT_DIR)/%.built)
-TEST_TARGETS := $(TEST_BATS:$(TEST_DIR)/%.bats=$(OUT_DIR)/%.executed)
+
+# Timestamps para caché incremental
+BUILD_STAMP := $(TIMESTAMP_DIR)/build.stamp
+TEST_STAMP := $(TIMESTAMP_DIR)/test.stamp
+LINT_STAMP := $(TIMESTAMP_DIR)/lint.stamp
+FORMAT_STAMP := $(TIMESTAMP_DIR)/format.stamp
+TOOLS_STAMP := $(TIMESTAMP_DIR)/tools.stamp
 
 # Artefactos reproducibles
 PACKAGE_NAME := pipeline-$(RELEASE)
