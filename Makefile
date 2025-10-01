@@ -51,16 +51,16 @@ PACKAGE_TAR := $(DIST_DIR)/$(PACKAGE_NAME).tar.gz
 CHECKSUM_SHA256 := $(DIST_DIR)/$(PACKAGE_NAME).sha256
 REPRO_ARTIFACTS := $(PACKAGE_TAR) $(CHECKSUM_SHA256)
 
-# Targets
-tools: $(OUT_DIR)/tools.verified ## Verificar disponibilidad de dependencias
+# Targets principales
+tools: $(TOOLS_STAMP) ## Verificar disponibilidad de dependencias
 
-lint: $(LINT_TARGETS) ## Revisar formato de Bash scripts
+lint: $(LINT_STAMP) ## Revisar formato de Bash scripts
 
-format: $(FORMAT_TARGETS) ## Formatear Bash scripts
+format: $(FORMAT_STAMP) ## Formatear Bash scripts
 
-build: $(BUILD_TARGETS) $(BUILD_INFO) ## Prepara artefactos intermedios en out/
+build: $(BUILD_STAMP) ## Prepara artefactos intermedios en out/
 
-test: $(TEST_TARGETS) ## Ejecutar suite de pruebas Bats
+test: $(TEST_STAMP) ## Ejecutar suite de pruebas Bats
 
 run: build ## Ejecutar el pipeline principal
 	@echo "Lanzando servidor..."
