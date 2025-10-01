@@ -64,12 +64,21 @@ test: build ## Ejecutar suite de pruebas Bats
 
 run: build ## Ejecutar el pipeline principal
 
-pack: build test ## Generar paquete reproducible en dist/
+pack: build test ## Generar paquete reproducible con metadata
 	@mkdir -p $(DIST_DIR)
+	@# Crear archivo de metadata
+	@echo "release: $(RELEASE)" > $(OUT_DIR)/release-info.txt
+	@echo "build_date: $$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $(OUT_DIR)/release-info.txt
+	@echo "git_commit: $$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" >> $(OUT_DIR)/release-info.txt
+	@# Crear tarball
 	@tar -czf $(DIST_DIR)/pipeline-$(RELEASE).tar.gz \
 		--exclude='$(OUT_DIR)' --exclude='$(DIST_DIR)' \
 		src/ test/ docs/ Makefile .env.example
-	@echo "Paquete creado: $(DIST_DIR)/pipeline-$(RELEASE).tar.gz"
+	@# Generar checksum
+	@cd $(DIST_DIR) && sha256sum pipeline-$(RELEASE).tar.gz > pipeline-$(RELEASE).tar.gz.sha256
+	@echo "✓ Paquete: $(DIST_DIR)/pipeline-$(RELEASE).tar.gz"
+	@echo "✓ Checksum: $(DIST_DIR)/pipeline-$(RELEASE).tar.gz.sha256"
+	@ls -lh $(DIST_DIR)/pipeline-$(RELEASE).tar.gz
 	
 clean: ## Limpiar directorios out/ y dist/
 	@echo "Limpiando artefactos"
