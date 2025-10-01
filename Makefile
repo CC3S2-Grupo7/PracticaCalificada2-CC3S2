@@ -13,7 +13,6 @@ export LC_ALL := C
 export LANG := C
 export TZ := UTC
 
-
 .PHONY: build clean format help lint pack run test tools
 
 # Directorios
@@ -24,24 +23,16 @@ DIST_DIR := dist
 
 # Variables de entorno
 PORT ?= 8080
-RELEASE ?= 0.1.0-alpha
+RELEASE ?= 0.2.0-beta
 LOG_LEVEL ?= 2
+
 # Exportar variables de entorno para que los scripts Bash puedan leerlas
 export PORT RELEASE LOG_LEVEL OUT_DIR DIST_DIR
 
+REQUIRED_TOOLS = bash shellcheck shfmt bats curl find nc ss jq
+
 # Targets
-tools: ## Verificar disponibilidad de dependencias
-	@echo "Verificando herramientas"
-	@command -v bash > /dev/null 2>&1 || { echo "Comando no encontrado: bash"; exit 1; }
-	@command -v shellcheck > /dev/null 2>&1 || { echo "Comando no encontrado: shellcheck"; exit 1; }
-	@command -v shfmt > /dev/null 2>&1 || { echo "Comando no encontrado: shfmt"; exit 1; }
-	@command -v bats > /dev/null 2>&1 || { echo "Comando no encontrado: bats"; exit 1; }
-	@command -v curl > /dev/null 2>&1 || { echo "Comando no encontrado: curl"; exit 1; }
-	@command -v find > /dev/null 2>&1 || { echo "Comando no encontrado: find"; exit 1; }
-	@command -v nc > /dev/null 2>&1 || { echo "Comando no encontrado: nc"; exit 1; }
-	@command -v ss > /dev/null 2>&1 || { echo "Comando no encontrado: ss"; exit 1; }
-	@command -v jq > /dev/null 2>&1 || { echo "Comando no encontrado: jq"; exit 1; }
-	@echo "Todas las herramientas están disponibles"
+tools: $(OUT_DIR)/tools.verified ## Verificar disponibilidad de dependencias
 
 lint: ## Revisar formato de Bash scripts
 	@find $(SRC_DIR) -name "*.sh" -type f | while read -r file; do \
@@ -65,9 +56,11 @@ build: tools ## Prepara artefactos intermedios en out/
 test: build ## Ejecutar suite de pruebas Bats
 	@bats $(TEST_DIR)/server.bats
 	@bats $(TEST_DIR)/run_integration.bats
+
 run: build ## Ejecutar el pipeline principal
 	@echo "Lanzando servidor..."
 	@$(SRC_DIR)/server.sh
+
 pack: build test ## Generar paquete reproducible en dist/
 	@mkdir -p $(DIST_DIR)
 	@tar -czf $(DIST_DIR)/pipeline-$(RELEASE).tar.gz \
@@ -83,3 +76,12 @@ help: ## Mostrar lista de targets
 	@echo "Targets disponibles:"
 	@grep -E '^[a-zA-Z0-9_\-]+:.*?##' $(MAKEFILE_LIST) | \
 		awk 'BEGIN{FS=":.*?##"}{printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+
+# Reglas patrón
+$(OUT_DIR)/tools.verified:
+	@echo "Verificando herramientas"
+	@for cmd in $(REQUIRED_TOOLS); do \
+		command -v $$cmd > /dev/null 2>&1 || { echo "Comando no encontrado: $$cmd"; exit 1; }; \
+	done
+	@mkdir -p $(@D)
+	@touch $@
