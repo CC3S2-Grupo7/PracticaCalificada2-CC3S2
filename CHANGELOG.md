@@ -1,3 +1,8 @@
+## [0.2.0-beta] - 2025-10-01
+- c5869c7 Merge branch 'vargas-release' into release
+- 1f4cae9 Cambios en guia-releases, considerando todos los pasos del target
+- 8e04a7a Correccion, uso de doble dolar para comando date
+
 ## [0.1.0-beta] - 2025-10-01
 - 58ad1e4 Initial commit
 - f641655 Agregar primeras lineas de .gitignore, carpetas out/ y dist/
